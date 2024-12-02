@@ -6,7 +6,7 @@ import kotlin.io.path.readText
 /**
  * Reads lines from the given input txt file.
  */
-fun readInput(name: String) = Path("src/$name.txt").readText().trim().lines().filter { it.isNotBlank() }
+fun readInput(day: String, name: String) = Path("src/$day", name).readText().trim().lines().filter { it.isNotBlank() }
 
 /**
  * Converts string to md5 hash.
@@ -26,16 +26,14 @@ fun check(got: Int, expected: Int) {
 
 typealias Part = (List<String>) -> Int
 
-fun puzzle(day: String, expected: Int, part: Part) {
-    check(part(readInput("Day${day}_test")), expected)
+fun puzzle(expected: Int, part: Part) {
+    val day = StackWalker.getInstance().walk { stack ->
+        val caller = stack.skip(1).findFirst().get()
+        caller.className.substringBefore(".")
+    }
+    check(part(readInput(day, "test.txt")), expected)
 
-    val input = readInput("Day${day}")
-     part(input).println()
+    val input = readInput(day, "input.txt")
+    part(input).println()
 }
 
-//fun puzzle(day: String, part1: Part, expectedPart1: Int, part2: Part, expectedPart2) {
-//    check(part1(readInput("Day${day}_test")), expectedPart1)
-//
-//    val input = readInput("Day${day}")
-//     part1(input).println()
-//}
