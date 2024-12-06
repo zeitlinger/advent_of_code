@@ -1,25 +1,6 @@
 package day06
 
 import puzzle
-import kotlin.math.absoluteValue
-
-data class Point(val x: Int, val y: Int)
-
-enum class Direction(val dx: Int, val dy: Int) {
-    NORTH(0, -1),
-    EAST(1, 0),
-    SOUTH(0, 1),
-    WEST(-1, 0);
-
-    fun turnRight(): Direction = when (this) {
-        NORTH -> EAST
-        EAST -> SOUTH
-        SOUTH -> WEST
-        WEST -> NORTH
-    }
-
-    fun ahead(p: Point): Point = Point(p.x + dx, p.y + dy)
-}
 
 fun main() {
     puzzle(41) { lines ->
