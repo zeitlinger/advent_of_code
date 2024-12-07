@@ -25,7 +25,7 @@ enum class Operator(val apply: (Long, Long) -> Long) {
 
 fun canSolve(want: Long, current: Long, left: List<Long>): Boolean {
     if (left.isEmpty()) return current == want
-    return Operator2.entries.any { canSolve(want, it.apply(current, left[0]), left.drop(1)) }
+    return Operator.entries.any { canSolve(want, it.apply(current, left[0]), left.drop(1)) }
 }
 
 fun canSolve(test: Long, input: List<Long>): Boolean {
