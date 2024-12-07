@@ -20,13 +20,11 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
  */
 fun Any?.println() = println(this)
 
-fun check(got: Int, expected: Int) {
+fun <N: Number> check(got: N, expected: N) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
-typealias Part = (List<String>) -> Int
-
-fun puzzle(expected: Int, part: Part) {
+fun <N: Number> puzzle(expected: N, part: (List<String>) -> N) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(1).findFirst().get()
         caller.className.substringBefore(".")
