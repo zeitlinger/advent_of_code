@@ -2,6 +2,7 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import kotlin.io.path.Path
 import kotlin.io.path.readText
+import kotlin.time.measureTime
 
 /**
  * Reads lines from the given input txt file.
@@ -20,18 +21,22 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
  */
 fun Any?.println() = println(this)
 
-fun <N: Number> check(got: N, expected: N) {
+fun <N : Number> check(got: N, expected: N) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
-fun <N: Number> puzzle(expected: N, part: (List<String>) -> N) {
+fun <N : Number> puzzle(expected: N, part: (List<String>) -> N) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(1).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
     check(part(readInput(day, "test.txt")), expected)
 
-    val input = readInput(day, "input.txt")
-    part(input).println()
+    val duration = measureTime {
+        val input = readInput(day, "input.txt")
+        part(input).println()
+    }
+    println("Time: $duration")
+
 }
 
