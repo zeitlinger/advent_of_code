@@ -1,4 +1,4 @@
-package day01
+package year2024.day01
 
 import puzzle
 import kotlin.math.absoluteValue

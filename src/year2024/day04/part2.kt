@@ -1,4 +1,4 @@
-package day04
+package year2024.day04
 
 import puzzle
 
