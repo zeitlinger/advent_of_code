@@ -27,7 +27,7 @@ fun <N: Number> check(got: N, expected: N) {
 fun <N: Number> puzzle(expected: N, part: (List<String>) -> N) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(1).findFirst().get()
-        caller.className.substringBefore(".")
+        caller.className.split(".").take(2).joinToString("/")
     }
     check(part(readInput(day, "test.txt")), expected)
 
