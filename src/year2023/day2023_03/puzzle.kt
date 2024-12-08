@@ -2,28 +2,37 @@ package year2023.day2023_03
 
 import puzzle
 
+data class Point(val x: Int, val y: Int)
+
 data class Number(val value: Int, val y: Int, val range: IntRange)
 
 fun main() {
+    puzzle(467835) { lines ->
+        val factoryByGear = mutableMapOf<Point, MutableList<Int>>()
 
-    puzzle(4361) { lines ->
-        fun isSymbol(x: Int, y: Int): Boolean = x in lines[y].indices && run {
+        fun isSymbol(x: Int, y: Int, number: Number): Boolean = x in lines[y].indices && run {
             val c = lines[y][x]
-            !c.isDigit() && c != '.'
+            if (c == '*') {
+                val point = Point(x, y)
+                factoryByGear.putIfAbsent(point, mutableListOf())
+                factoryByGear[point]!!.add(number.value)
+                return true
+            }
+            return false
         }
 
-        fun anySymbol(y: Int, from: Int, to: Int): Boolean =
+        fun anySymbol(y: Int, from: Int, to: Int, number: Number): Boolean =
             y in lines.indices
-                    && (from until to + 1).any { x -> isSymbol(x, y)
+                    && (from until to + 1).any { x -> isSymbol(x, y, number)
         }
 
         fun hasAdjacentSymbol(number: Number): Boolean {
             val last = number.range.last
             val first = number.range.first
-            return (isSymbol(first - 1, number.y)
-                    || isSymbol(last + 1, number.y)
-                    || anySymbol(number.y - 1, first - 1, last + 1)
-                    || anySymbol(number.y + 1, first - 1, last + 1))
+            return (isSymbol(first - 1, number.y, number)
+                    || isSymbol(last + 1, number.y, number)
+                    || anySymbol(number.y - 1, first - 1, last + 1, number)
+                    || anySymbol(number.y + 1, first - 1, last + 1, number))
         }
 
         val isNum = "(\\d+)".toRegex()
@@ -33,9 +42,9 @@ fun main() {
                 Number(it.value.toInt(), y, range)
             }
         }
-        val filter = list.filter { hasAdjacentSymbol(it) }
-        println(filter.map { it.value }.joinToString(" "))
-        filter.sumOf { it.value }
+        list.filter { hasAdjacentSymbol(it) }
+        println(factoryByGear)
+        factoryByGear.values.filter { it.size == 2 }.map { it[0] *  it[1] }.sum()
     }
 }
 
