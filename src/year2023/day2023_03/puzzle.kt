@@ -6,7 +6,7 @@ data class Number(val value: Int, val y: Int, val range: IntRange)
 
 fun main() {
 
-    puzzle(2286) { lines ->
+    puzzle(4361) { lines ->
         fun isSymbol(x: Int, y: Int): Boolean = x in lines[y].indices && run {
             val c = lines[y][x]
             !c.isDigit() && c != '.'
@@ -17,10 +17,14 @@ fun main() {
                     && (from until to + 1).any { x -> isSymbol(x, y)
         }
 
-        fun hasAdjacentSymbol(number: Number): Boolean = isSymbol(number.range.first - 1, number.y)
-                || isSymbol(number.range.last + 1, number.y)
-                || anySymbol(number.y - 1, number.range.first - 1, number.range.last + 1)
-                || anySymbol(number.y + 1, number.range.first - 1, number.range.last + 1)
+        fun hasAdjacentSymbol(number: Number): Boolean {
+            val last = number.range.last
+            val first = number.range.first
+            return (isSymbol(first - 1, number.y)
+                    || isSymbol(last + 1, number.y)
+                    || anySymbol(number.y - 1, first - 1, last + 1)
+                    || anySymbol(number.y + 1, first - 1, last + 1))
+        }
 
         val isNum = "(\\d+)".toRegex()
         val list = lines.indices.flatMap { y ->
@@ -30,6 +34,7 @@ fun main() {
             }
         }
         val filter = list.filter { hasAdjacentSymbol(it) }
+        println(filter.map { it.value }.joinToString(" "))
         filter.sumOf { it.value }
     }
 }
