@@ -7,7 +7,12 @@ fun main() {
         val input = lines[0]
         val disk = mutableListOf<Int>()
         readDisk(input, disk)
-        defrag(disk, disk.max())
+        var maxFileId = disk.max()
+        while (maxFileId >= 0) {
+            val move = defrag(disk, maxFileId) ?: break
+            maxFileId = move.fileId - 1
+        }
+
         checksum(disk)
     }
 }
@@ -24,8 +29,8 @@ const val free = -1
 
 data class Move(val from: Int, val to: Int, val len: Int, val fileId: Int)
 
-fun defrag(disk: MutableList<Int>, maxFileId: Int): MutableList<Int> {
-    val move = getLastFreeToMove(disk, maxFileId) ?: return disk
+fun defrag(disk: MutableList<Int>, maxFileId: Int): Move? {
+    val move = getLastFreeToMove(disk, maxFileId) ?: return null
     val from = move.from
     val to = move.to
     val len = move.len
@@ -33,8 +38,9 @@ fun defrag(disk: MutableList<Int>, maxFileId: Int): MutableList<Int> {
         disk[to + i] = disk[from + i]
         disk[from + i] = free
     }
+//    println("Move file ${move.fileId} from $from to $to")
 //    println(disk.map { if (it == free) "." else it }.joinToString(""))
-    return defrag(disk, move.fileId - 1)
+    return move
 }
 
 private fun getLastFreeToMove(disk: MutableList<Int>, maxFileId: Int): Move? {
