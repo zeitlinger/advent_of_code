@@ -3,11 +3,11 @@ package year2024.day2024_09
 import puzzle
 
 fun main() {
-    puzzle(1928) { lines ->
+    puzzle(2858) { lines ->
         val input = lines[0]
         val disk = mutableListOf<Int>()
         readDisk(input, disk)
-        defrag(disk)
+        defrag(disk, disk.max())
         checksum(disk)
     }
 }
@@ -22,28 +22,47 @@ fun checksum(disk: MutableList<Int>): Long = disk.mapIndexed { pos, id ->
 
 const val free = -1
 
-fun defrag(disk: MutableList<Int>): MutableList<Int> {
-    val lastIndex = getLastFreeToMove(disk) ?: return disk
-    for (i in 0 until lastIndex) {
-        if (disk[i] == free) {
-            disk[i] = disk[lastIndex]
-            disk.removeAt(lastIndex)
-            while (disk.lastOrNull() == free) {
-                disk.removeAt(disk.size - 1)
-            }
-            return defrag(disk)
-        }
+data class Move(val from: Int, val to: Int, val len: Int, val fileId: Int)
+
+fun defrag(disk: MutableList<Int>, maxFileId: Int): MutableList<Int> {
+    val move = getLastFreeToMove(disk, maxFileId) ?: return disk
+    val from = move.from
+    val to = move.to
+    val len = move.len
+    for (i in len - 1 downTo 0) {
+        disk[to + i] = disk[from + i]
+        disk[from + i] = free
     }
-    throw IllegalStateException("Should not happen")
+//    println(disk.map { if (it == free) "." else it }.joinToString(""))
+    return defrag(disk, move.fileId - 1)
 }
 
-private fun getLastFreeToMove(disk: MutableList<Int>): Int? {
-    if (!disk.contains(free)) {
+private fun getLastFreeToMove(disk: MutableList<Int>, maxFileId: Int): Move? {
+    if (maxFileId < 0) {
         return null
     }
-    for (j in disk.size - 1 downTo 0) {
-        if (disk[j] != free) {
-            return j
+    val start = disk.indexOf(maxFileId)
+    val end = disk.lastIndexOf(maxFileId)
+    val len = end - start + 1
+    getFreeSpace(disk, len, start)?.let { return Move(start, it, len, maxFileId) }
+    return getLastFreeToMove(disk, maxFileId - 1)
+}
+
+fun getFreeSpace(disk: MutableList<Int>, need: Int, before: Int): Int? {
+    var startPos = 0
+    var freeCount = 0
+    disk.forEachIndexed { index, id ->
+        if (index == before) {
+            return null
+        }
+        if (id == free) {
+            freeCount++
+            if (freeCount >= need) {
+                return startPos
+            }
+        } else {
+            freeCount = 0
+            startPos = index + 1
         }
     }
     return null
