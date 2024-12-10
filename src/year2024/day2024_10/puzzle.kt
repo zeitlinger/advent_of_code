@@ -14,7 +14,7 @@ enum class Direction(val dx: Int, val dy: Int) {
 typealias Path = List<Point>
 
 fun main() {
-    puzzle(36) { lines ->
+    puzzle(81) { lines ->
         val map = lines.map { it.map { it.digitToInt() } }
         val height = map.size
         val width = map[0].size
