@@ -45,7 +45,7 @@ fun main() {
                 if (score.isNotEmpty()) {
                     println("found at $x, $y with score $score")
                 }
-                score.filter { it.isNotEmpty() }.map { it.last() }.toSet().size
+                score.size
             }
         }
     }
