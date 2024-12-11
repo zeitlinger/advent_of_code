@@ -2,7 +2,7 @@ package year2024.day2024_11
 
 import puzzle
 
-val lookup = mutableMapOf<Int, MutableMap<Long, Int>>()
+val lookup = mutableMapOf<Long, MutableMap<Long, Long>>()
 
 fun main() {
     puzzle(null) { lines ->
@@ -13,18 +13,19 @@ fun main() {
     }
 }
 
-private fun expandWithCache(value: Long, start: Int): Int {
+private fun expandWithCache(value: Long, start: Long): Long {
     if (start > 75) return 1
 
-    if (start.mod(10) == 0) {
+    val r = if (start.mod(10) == 0) {
         val levelCache = lookup.getOrPut(start) { mutableMapOf() }
-        return levelCache.getOrPut(value) { expand(start, value) }
+        levelCache.getOrPut(value) { expand(start, value) }
+    } else {
+        expand(start, value)
     }
-
-    return expand(start, value)
+    return r
 }
 
-private fun expand(start: Int, value: Long): Int {
+private fun expand(start: Long, value: Long): Long {
     val nextStart = start + 1
 
     if (value == 0L) return expandWithCache(1, nextStart)
