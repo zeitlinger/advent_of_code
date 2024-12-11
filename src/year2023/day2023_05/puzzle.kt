@@ -2,14 +2,41 @@ package year2023.day2023_05
 
 import puzzle
 
-data class Mapping(val srcFrom: Long, val dstFrom: Long, val length: Long) {
-//    fun intersection(range: LongRange) {
-//        val srcRange = srcFrom until srcFrom + length
-//        val dstRange = dstFrom until dstFrom + length
-//        if (srcRange.intersect(range) != ) {
-//            throw IllegalArgumentException("intersection $srcRange $dstRange $range")
-//        }
-//    }
+data class Mapping(val src: LongRange, val dst: LongRange, val delta: Long)
+
+data class SubRanges(val included: List<LongRange>, val excluded: List<LongRange>)
+
+fun cut(range: LongRange, cutter: LongRange): SubRanges {
+    if (cutter.last < range.first || cutter.first > range.last) {
+        // cutter outside range
+        return SubRanges(emptyList(), listOf(range))
+    }
+    if (cutter.first <= range.first && cutter.last >= range.last) {
+        // cutter includes range
+        return SubRanges(listOf(range), emptyList())
+    }
+    // cutter intersects range
+    if (cutter.first > range.first && cutter.last < range.last) {
+        return SubRanges(
+            listOf(cutter),
+            listOf(
+                range.first until cutter.first,
+                cutter.last + 1..range.last
+            )
+        )
+    }
+    // cutter at start
+    if (cutter.first <= range.first) {
+        return SubRanges(
+            listOf(cutter),
+            listOf(cutter.last + 1..range.last)
+        )
+    }
+    // cutter at end
+    return SubRanges(
+        listOf(cutter),
+        listOf(range.first until cutter.first)
+    )
 }
 
 data class Rule(val src: String, val dst: String, val mappings: MutableList<Mapping>)
@@ -33,30 +60,24 @@ fun main() {
                 rules.add(Rule(src, dst, mutableListOf()))
             } else {
                 val (dstFrom, srcFrom, length) = line.split(" ").map { it.toLong() }
-                rules.last().mappings.add(Mapping(srcFrom, dstFrom, length))
+                val src = srcFrom until srcFrom + length
+                val dst = dstFrom until dstFrom + length
+                val delta = dstFrom - srcFrom
+                rules.last().mappings.add(Mapping(src, dst, delta))
             }
         }
         val ruleMap = rules.associateBy { it.src }
 
         fun translate(input: Product): Product {
             val rule = ruleMap[input.type] ?: return input
-            val newIds = input.ids.map { srcRange ->
-                val newRange = srcRange.toMutableList()
-                rule.mappings.forEach { mapping ->
-
+            val newIds = input.ids.flatMap { srcRange ->
+                rule.mappings.flatMap { mapping ->
+                    val cut = cut(srcRange, mapping.src)
+                    val r: List<LongRange> = cut.excluded + cut.included.map { included ->
+                        included.first + mapping.delta..included.last + mapping.delta
+                    }
+                    r
                 }
-//                srcId.contains()
-//                val newId = rule.mappings.firstNotNullOfOrNull { mapping ->
-//
-//
-//                    if (srcId in mapping.srcFrom until mapping.srcFrom + mapping.length) {
-//                        mapping.dstFrom + srcId - mapping.srcFrom
-//                    } else {
-//                        null
-//                    }
-//                }
-//                newId ?: srcId
-                srcRange
             }
             println("translate $input to $newIds")
             return translate(Product(rule.dst, newIds))
@@ -66,7 +87,6 @@ fun main() {
         if (location.type != "location") {
             throw IllegalArgumentException("not a location: $location")
         }
-//        location.ids.min()!!
-        0
+        location.ids.minOf { it.first }
     }
 }
