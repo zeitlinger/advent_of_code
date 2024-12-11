@@ -16,13 +16,7 @@ fun main() {
 private fun expandWithCache(value: Long, start: Long): Long {
     if (start > 75) return 1
 
-    val r = if (start.mod(10) == 0) {
-        val levelCache = lookup.getOrPut(start) { mutableMapOf() }
-        levelCache.getOrPut(value) { expand(start, value) }
-    } else {
-        expand(start, value)
-    }
-    return r
+    return lookup.getOrPut(start) { mutableMapOf() }.getOrPut(value) { expand(start, value) }
 }
 
 private fun expand(start: Long, value: Long): Long {
