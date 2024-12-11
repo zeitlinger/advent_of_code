@@ -7,32 +7,22 @@ fun main() {
         lines[0]
             .split(" ")
             .map { it.toLong() }
-            .sumOf { expandStones(mutableListOf(it), 1) }
+            .sumOf { expandStones(it, 1) }
     }
 }
 
-private fun expandStones(initial: MutableList<Long>, start: Int): Int {
-    var stones = initial
-    for (blink in start..75) {
-        val newStones = mutableListOf<Long>()
-        for (value in stones) {
-            val s = value.toString()
-            when {
-                value == 0L -> newStones.add(1)
-                s.length.mod(2) == 0 -> {
-                    newStones.add(s.substring(0, s.length / 2).toLong())
-                    newStones.add(s.substring(s.length / 2).toLong())
-                }
+private fun expandStones(value: Long, start: Int): Int {
+    if (start > 75) return 1
 
-                else -> {
-                    newStones.add(value * 2024)
-                }
-            }
-        }
-        stones = newStones
-        println("$blink: ${stones.size}")
+    val nextStart = start + 1
 
-//            println(stones)
+    if (value == 0L) return expandStones(1, nextStart)
+
+    val s = value.toString()
+    if (s.length.mod(2) == 0) {
+        return expandStones(s.substring(0, s.length / 2).toLong(), nextStart) +
+                expandStones(s.substring(s.length / 2).toLong(), nextStart)
     }
-    return stones.size
+
+    return expandStones(value * 2024, nextStart)
 }
