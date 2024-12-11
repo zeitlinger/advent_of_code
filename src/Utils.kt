@@ -25,12 +25,14 @@ fun <N : Number> check(got: N, expected: N) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
-fun <N : Number> puzzle(expected: N, part: (List<String>) -> N) {
+fun <N : Number> puzzle(expected: N?, part: (List<String>) -> N) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(1).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
-    check(part(readInput(day, "test.txt")), expected)
+    if (expected != null) {
+        check(part(readInput(day, "test.txt")), expected)
+    }
 
     val duration = measureTime {
         val input = readInput(day, "input.txt")
