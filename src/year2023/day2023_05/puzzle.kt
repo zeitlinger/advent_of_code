@@ -25,23 +25,33 @@ fun cut(range: LongRange, cutter: LongRange): SubRanges {
             )
         )
     }
+
     // cutter at start
     if (cutter.first <= range.first) {
         return SubRanges(
-            listOf(cutter),
+            listOf(range.first .. cutter.last),
             listOf(cutter.last + 1..range.last)
         )
     }
     // cutter at end
     return SubRanges(
-        listOf(cutter),
-        listOf(range.first until cutter.first)
+        listOf(cutter.first .. range.last),
+        listOf(range.first..<cutter.first)
     )
 }
 
 data class Rule(val src: String, val dst: String, val mappings: MutableList<Mapping>)
 
-data class Product(val type: String, val ids: List<LongRange>)
+data class Product(val type: String, val ranges: List<Translation>)
+
+data class Translation(
+    val src: LongRange,
+    val dst: LongRange,
+    val srcProduct: String?,
+    val dstProduct: String,
+    val parent: Translation?,
+    val mapping: Mapping?
+)
 
 fun main() {
     puzzle(46) { lines ->
@@ -50,7 +60,8 @@ fun main() {
             .chunked(2)
             .map {
                 val from = it[0]
-                from until from + it[1]
+                val range = from until from + it[1]
+                Translation(range, range, null, "seed", null, null)
             }
         val rules = mutableListOf<Rule>()
         lines.drop(1).forEach { line ->
@@ -69,17 +80,27 @@ fun main() {
         val ruleMap = rules.associateBy { it.src }
 
         fun translate(input: Product): Product {
+//            println("translate $input")
             val rule = ruleMap[input.type] ?: return input
-            val newIds = input.ids.flatMap { srcRange ->
-                rule.mappings.flatMap { mapping ->
-                    val cut = cut(srcRange, mapping.src)
-                    val r: List<LongRange> = cut.excluded + cut.included.map { included ->
-                        included.first + mapping.delta..included.last + mapping.delta
+//            println(rule)
+            val newIds = input.ranges.flatMap { range ->
+                val untranslated = mutableListOf(range.dst)
+                val translated = mutableListOf<Translation>()
+                rule.mappings.forEach { mapping ->
+                    val l = untranslated.toList()
+                    untranslated.clear()
+                    l.forEach { r ->
+                        val cut = cut(r, mapping.src)
+                        untranslated.addAll(cut.excluded)
+                        translated.addAll(cut.included.map { included ->
+                            Translation(included, included.first + mapping.delta..included.last + mapping.delta,
+                                rule.src, rule.dst, range, mapping)
+                        })
                     }
-                    r
                 }
+                translated + untranslated.map { Translation(it, it, rule.src, rule.dst, range, null) }
             }
-            println("translate $input to $newIds")
+//            println("translate $input to $newIds")
             return translate(Product(rule.dst, newIds))
         }
 
@@ -87,6 +108,16 @@ fun main() {
         if (location.type != "location") {
             throw IllegalArgumentException("not a location: $location")
         }
-        location.ids.minOf { it.first }
+        val min = location.ranges.minBy { it.dst.first }
+        val parents = parents(min)
+        parents.forEach {
+            println("${it.dst.last - it.dst.first + 1} ${it.srcProduct} ${it.src} -> ${it.dstProduct} ${it.dst} ${it.mapping}")
+        }
+        min.dst.first
     }
+}
+
+fun parents(t: Translation?): List<Translation> {
+    if (t == null) return emptyList()
+    return parents(t.parent) + listOf(t)
 }
