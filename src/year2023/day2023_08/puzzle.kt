@@ -17,34 +17,57 @@ fun main() {
             val lr = s[1].substringAfter("(").substringBefore(")").split(", ")
             Instruction(from, lr[0], lr[1])
         }.associateBy { it.from }
-        var steps = 0
-        var turnIndex = 0
-        var locations = instructions.keys.filter { it.endsWith("A") }
-        while (true) {
-//            println(locations)
-            if (locations.all { it.endsWith("Z") }) {
-                return@puzzle steps
-            }
-            locations = locations.map {
-                val instruction = instructions[it]!!
-                val turn = turns[turnIndex]
-                if (turn == Turn.L) {
-                    instruction.left
-                } else {
-                    instruction.right
-                }
-            }
 
-            steps++
-            if (steps % 1000 == 0) {
-                println(steps)
-            }
-
-            turnIndex++
-            if (turnIndex == turns.size) {
-                turnIndex = 0
-            }
+        val locations = instructions.keys.filter { it.endsWith("A") }
+        val needed = locations.map {
+            stepsNeeded(instructions, turns, it)
         }
-        throw IllegalStateException("Should not reach here")
+        leastCommonMultiple(needed)
     }
+}
+
+fun leastCommonMultiple(a: Long, b: Long): Long {
+    return a * b / greatestCommonDivisor(a, b)
+}
+
+fun greatestCommonDivisor(a: Long, b: Long): Long {
+    return if (b == 0L) a else greatestCommonDivisor(b, a % b)
+}
+
+fun leastCommonMultiple(input: List<Long>): Long {
+    return input.reduce { acc, i -> leastCommonMultiple(acc, i) }
+}
+
+private fun stepsNeeded(
+    instructions: Map<String, Instruction>,
+    turns: List<Turn>,
+    start: String
+): Long {
+    var steps = 0L
+    var turnIndex = 0
+    var location = start
+    while (true) {
+        if (location.endsWith("Z")) {
+            return steps
+        }
+
+        val instruction = instructions[location]!!
+        val turn = turns[turnIndex]
+        location = if (turn == Turn.L) {
+            instruction.left
+        } else {
+            instruction.right
+        }
+
+        steps++
+        if (steps % 1000 == 0L) {
+            println(steps)
+        }
+
+        turnIndex++
+        if (turnIndex == turns.size) {
+            turnIndex = 0
+        }
+    }
+    throw IllegalStateException("Should not reach here")
 }
