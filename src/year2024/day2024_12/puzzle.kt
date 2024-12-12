@@ -68,7 +68,8 @@ fun main() {
                 else -> {
                     val outside = neighbor(neighbor, fenceDir, regionMap)
                     when {
-                        outside != region && nIndex < indexBelow -> true
+                        outside == region -> false
+                        nIndex < indexBelow -> true
                         else -> hasFenceInDir(neighbor, fenceDir, region, neighborDir, indexBelow)
                     }
                 }
