@@ -4,7 +4,14 @@ import puzzle
 
 data class Point(val x: Int, val y: Int)
 
-data class Region(val id: Int, val letter: Char, val gardens: MutableList<Point>)
+data class Fence(val point: Point, val direction: Direction)
+
+data class Region(
+    val id: Int,
+    val letter: Char,
+    val gardens: MutableList<Point>,
+    val fences: MutableList<Fence> = mutableListOf()
+)
 
 enum class Direction(val dx: Int, val dy: Int) {
     UP(0, -1),
@@ -14,7 +21,7 @@ enum class Direction(val dx: Int, val dy: Int) {
 }
 
 fun main() {
-    puzzle(1930) { lines ->
+    puzzle(1206) { lines ->
         val input = lines.map { it.toCharArray().toMutableList() }
         val maxX = input.maxOf { it.size }
         var regions = 0
@@ -34,12 +41,38 @@ fun main() {
             }
         }
 
+        fun neighbor(
+            point: Point,
+            dir: Direction,
+            regionMap: MutableList<MutableList<Region?>>
+        ): Region? {
+            val nx = point.x + dir.dx
+            val ny = point.y + dir.dy
+            return regionMap.getOrNull(ny)?.getOrNull(nx)
+        }
+
+        fun hasAdjacentFenceInPriorGarden(garden: Point, dir: Direction, region: Region): Boolean {
+            val myIndex = region.gardens.indexOf(garden)
+            return Direction.entries.firstOrNull {
+                val nx = garden.x + it.dx
+                val ny = garden.y + it.dy
+                val neighbor = Point(nx, ny)
+                val n = neighbor(neighbor, dir, regionMap)
+                val fence = n != null && n != region
+                val nIndex = region.gardens.indexOf(neighbor)
+                fence && nIndex in 0 until myIndex
+            } != null
+        }
+
         fun price(region: Region): Long {
-            val fenceLen = region.gardens.sumOf { point ->
+            val fenceLen = region.gardens.sumOf { garden ->
                 Direction.entries.count { dir ->
-                    val nx = point.x + dir.dx
-                    val ny = point.y + dir.dy
-                    regionMap.getOrNull(ny)?.getOrNull(nx) != region
+                    val hasFence = neighbor(garden, dir, regionMap) != region &&
+                            !hasAdjacentFenceInPriorGarden(garden, dir, region)
+                    if (hasFence) {
+                        region.fences += Fence(garden, dir)
+                    }
+                    hasFence
                 }
             }
             return fenceLen.toLong() * region.gardens.size
@@ -54,7 +87,28 @@ fun main() {
             }
         }
 
-        regionMap.flatten().toSet().sumOf { price(it!!) }
+        val set = regionMap.flatten().toSet()
+        val price = set.sumOf { price(it!!) }
+        set.forEach {
+            printRegion(it!!)
+        }
+        price
+    }
+}
+
+fun printRegion(region: Region) {
+    println("Region ${region.id} with letter ${region.letter} has ${region.gardens.size} gardens and ${region.fences.size} fences")
+    val minX = region.fences.minOf { it.point.x }
+    val minY = region.fences.minOf { it.point.y }
+    val maxX = region.fences.maxOf { it.point.x }
+    val maxY = region.fences.maxOf { it.point.y }
+    for (y in minY..maxY) {
+        for (x in minX..maxX) {
+            val point = Point(x, y)
+            val fence = region.fences.count { it.point == point }
+            print(fence)
+        }
+        println()
     }
 }
 
