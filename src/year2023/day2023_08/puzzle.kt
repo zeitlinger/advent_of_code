@@ -19,19 +19,26 @@ fun main() {
         }.associateBy { it.from }
         var steps = 0
         var turnIndex = 0
-        var location = "AAA"
+        var locations = instructions.keys.filter { it.endsWith("A") }
         while (true) {
-            if (location == "ZZZ") {
+//            println(locations)
+            if (locations.all { it.endsWith("Z") }) {
                 return@puzzle steps
             }
-            val instruction = instructions[location]!!
-            val turn = turns[turnIndex]
-            location = if (turn == Turn.L) {
-                instruction.left
-            } else {
-                instruction.right
+            locations = locations.map {
+                val instruction = instructions[it]!!
+                val turn = turns[turnIndex]
+                if (turn == Turn.L) {
+                    instruction.left
+                } else {
+                    instruction.right
+                }
             }
+
             steps++
+            if (steps % 1000 == 0) {
+                println(steps)
+            }
 
             turnIndex++
             if (turnIndex == turns.size) {
