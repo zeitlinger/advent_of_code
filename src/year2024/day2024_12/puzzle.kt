@@ -1,7 +1,6 @@
 package year2024.day2024_12
 
 import puzzle
-import kotlin.math.pow
 
 data class Point(val x: Int, val y: Int)
 
@@ -22,6 +21,7 @@ enum class Direction(val dx: Int, val dy: Int) {
 }
 
 fun main() {
+
     puzzle(1206) { lines ->
         val input = lines.map { it.toCharArray().toMutableList() }
         val maxX = input.maxOf { it.size }
@@ -52,16 +52,37 @@ fun main() {
             return regionMap.getOrNull(ny)?.getOrNull(nx)
         }
 
-        fun hasAdjacentFenceInPriorGarden(garden: Point, dir: Direction, region: Region): Boolean {
-            val myIndex = region.gardens.indexOf(garden)
+        fun hasFenceInDir(
+            garden: Point,
+            fenceDir: Direction,
+            region: Region,
+            neighborDir: Direction,
+            indexBelow: Int
+        ): Boolean {
+            val nx = garden.x + neighborDir.dx
+            val ny = garden.y + neighborDir.dy
+            val neighbor = Point(nx, ny)
+            val nIndex = region.gardens.indexOf(neighbor)
+            return when {
+                nIndex < 0 -> return false
+                else -> {
+                    val outside = neighbor(neighbor, fenceDir, regionMap)
+                    when {
+                        outside != region && nIndex < indexBelow -> true
+                        else -> hasFenceInDir(neighbor, fenceDir, region, neighborDir, indexBelow)
+                    }
+                }
+            }
+        }
+
+        fun hasAdjacentFenceInPriorGarden(
+            garden: Point,
+            fenceDir: Direction,
+            region: Region,
+            indexBelow: Int
+        ): Boolean {
             return Direction.entries.firstOrNull {
-                val nx = garden.x + it.dx
-                val ny = garden.y + it.dy
-                val neighbor = Point(nx, ny)
-                val n = neighbor(neighbor, dir, regionMap)
-                val fence = n == region
-                val nIndex = region.gardens.indexOf(neighbor)
-                fence && nIndex in 0 until myIndex
+                hasFenceInDir(garden, fenceDir, region, it, indexBelow)
             } != null
         }
 
@@ -69,7 +90,7 @@ fun main() {
             val fenceLen = region.gardens.sumOf { garden ->
                 Direction.entries.count { dir ->
                     val hasFence = neighbor(garden, dir, regionMap) != region &&
-                            !hasAdjacentFenceInPriorGarden(garden, dir, region)
+                            !hasAdjacentFenceInPriorGarden(garden, dir, region, region.gardens.indexOf(garden))
                     if (hasFence) {
                         region.fences += Fence(garden, dir)
                     }
@@ -104,25 +125,15 @@ fun printRegion(region: Region) {
     val maxX = region.fences.maxOf { it.point.x }
     val maxY = region.fences.maxOf { it.point.y }
     val fenceMap = region.fences.groupBy { it.point }
-    for (y in minY..maxY) {
-        for (x in minX..maxX) {
-            val point = Point(x, y)
-            val v = fenceMap[point]?.let {
-                it.map { 2.0.pow(it.direction.ordinal) }.sum()
-            }
-//            val fence = region.fences.count { it.point == point }
-            val fence = v?.toInt() ?: 0
-            val indexOf = region.gardens.indexOf(point)
-            val c = when {
-                fence > 0 -> fence.toString()
-                indexOf >= 0 -> "G"
-                else -> " "
-            }
-            print(if (indexOf < 0) "   " else indexOf.toString().padStart(3, ' '))
-            print("=")
-            print(c)
-        }
-        println()
+    val map = MutableList(maxY * 2 + 3) { MutableList(maxX * 2 + 3) { ' ' } }
+    region.fences.forEach {
+        val x = it.point.x* 2 + it.direction.dx + 1
+        val y = it.point.y* 2 + it.direction.dy + 1
+        map[y][x] = '*'
     }
+    region.gardens.forEach {
+        map[it.y * 2 + 1][it.x * 2 + 1] = region.letter
+    }
+    map.forEach { println(it.joinToString("")) }
 }
 
