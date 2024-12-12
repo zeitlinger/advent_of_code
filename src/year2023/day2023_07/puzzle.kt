@@ -3,7 +3,7 @@ package year2023.day2023_07
 import puzzle
 
 enum class Card {
-    A, K, Q, J, T, _9, _8, _7, _6, _5, _4, _3, _2;
+    A, K, Q, T, _9, _8, _7, _6, _5, _4, _3, _2, J;
 
     companion object {
         fun of(c: Char): Card = when (c) {
@@ -20,6 +20,7 @@ enum class Card {
             '4' -> _4
             '3' -> _3
             '2' -> _2
+
             else -> {
                 throw IllegalArgumentException("Invalid card $c")
             }
@@ -30,8 +31,8 @@ enum class Card {
 data class Hand(val cards: List<Card>, val bid: Int)
 
 fun compareHands(h1: Hand, h2: Hand): Int {
-    val r1 = rank(h1)
-    val r2 = rank(h2)
+    val r1 = rank(cards = h1.cards)
+    val r2 = rank(cards = h2.cards)
     if (r1 != r2) {
         return r1 - r2
     }
@@ -43,8 +44,20 @@ fun compareHands(h1: Hand, h2: Hand): Int {
     return 0
 }
 
-fun rank(hand: Hand): Int {
-    val g = hand.cards.groupBy { it }.values.sortedByDescending { it.size }
+fun rank(cards: List<Card>, ignoreJokersBefore: Int = 0): Int {
+    val firstJoker = cards.indexOfFirst { it == Card.J }
+    if (firstJoker >= ignoreJokersBefore) {
+        return Card.entries.map {
+            val l = cards.toMutableList()
+            l[firstJoker] = it
+            rank(l, firstJoker + 1)
+        }.max()
+    }
+    return rawRank(cards)
+}
+
+private fun rawRank(cards: List<Card>): Int {
+    val g = cards.groupBy { it }.values.sortedByDescending { it.size }
     if (g[0].size == 5) {
         // 5 of a kind
         return 7
@@ -73,7 +86,7 @@ fun rank(hand: Hand): Int {
 }
 
 fun main() {
-    puzzle(6440) { lines ->
+    puzzle(5905) { lines ->
         val sorted = lines.map {
             val s = it.split(" ")
             val hand = s[0]
