@@ -5,7 +5,7 @@ import puzzle
 data class Sequence(val values: List<Long>)
 
 fun main() {
-    puzzle(114) { lines ->
+    puzzle(2) { lines ->
         lines.sumOf {
             val sequence = Sequence(it.split(" ").map { it.toLong() })
             next(sequence)
@@ -21,7 +21,7 @@ fun next(sequence: Sequence): Long {
         slopes.add(list)
         values = list
     }
-    return slopes.sumOf { it.last() }
+    return slopes.reversed().map { it.first() }.reduce { acc, l -> l - acc }
 }
 
 fun slope(values: List<Long>): List<Long> {
