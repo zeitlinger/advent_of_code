@@ -121,11 +121,8 @@ fun main() {
 
 fun printRegion(region: Region) {
     println("Region ${region.id} with letter ${region.letter} has ${region.gardens.size} gardens and ${region.fences.size} fences")
-    val minX = region.fences.minOf { it.point.x }
-    val minY = region.fences.minOf { it.point.y }
     val maxX = region.fences.maxOf { it.point.x }
     val maxY = region.fences.maxOf { it.point.y }
-    val fenceMap = region.fences.groupBy { it.point }
     val map = MutableList(maxY * 2 + 3) { MutableList(maxX * 2 + 3) { ' ' } }
     region.fences.forEach {
         val x = it.point.x* 2 + it.direction.dx + 1
@@ -135,6 +132,6 @@ fun printRegion(region: Region) {
     region.gardens.forEach {
         map[it.y * 2 + 1][it.x * 2 + 1] = region.letter
     }
-    map.forEach { println(it.joinToString("")) }
+//    map.forEach { println(it.joinToString("")) }
 }
 
