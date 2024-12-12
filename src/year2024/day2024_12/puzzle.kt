@@ -1,6 +1,7 @@
 package year2024.day2024_12
 
 import puzzle
+import kotlin.math.pow
 
 data class Point(val x: Int, val y: Int)
 
@@ -58,7 +59,7 @@ fun main() {
                 val ny = garden.y + it.dy
                 val neighbor = Point(nx, ny)
                 val n = neighbor(neighbor, dir, regionMap)
-                val fence = n != null && n != region
+                val fence = n == region
                 val nIndex = region.gardens.indexOf(neighbor)
                 fence && nIndex in 0 until myIndex
             } != null
@@ -102,11 +103,24 @@ fun printRegion(region: Region) {
     val minY = region.fences.minOf { it.point.y }
     val maxX = region.fences.maxOf { it.point.x }
     val maxY = region.fences.maxOf { it.point.y }
+    val fenceMap = region.fences.groupBy { it.point }
     for (y in minY..maxY) {
         for (x in minX..maxX) {
             val point = Point(x, y)
-            val fence = region.fences.count { it.point == point }
-            print(fence)
+            val v = fenceMap[point]?.let {
+                it.map { 2.0.pow(it.direction.ordinal) }.sum()
+            }
+//            val fence = region.fences.count { it.point == point }
+            val fence = v?.toInt() ?: 0
+            val indexOf = region.gardens.indexOf(point)
+            val c = when {
+                fence > 0 -> fence.toString()
+                indexOf >= 0 -> "G"
+                else -> " "
+            }
+            print(if (indexOf < 0) "   " else indexOf.toString().padStart(3, ' '))
+            print("=")
+            print(c)
         }
         println()
     }
