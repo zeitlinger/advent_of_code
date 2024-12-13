@@ -15,11 +15,15 @@ enum class Status(val symbol: Char) {
 val tryStatus = listOf(Status.OPERATIONAL, Status.DAMAGED)
 
 fun main() {
-    puzzle(21) { lines ->
+    puzzle(525152) { lines ->
         lines.sumOf { line ->
             val s = line.split(" ")
-            val brokenRecord = s[0].map { Status.of(it) }
-            val damagedLengths = s[1].split(",").map { it.toInt() }
+            val s1 = List(5) { s[0] }.joinToString("?")
+            val brokenRecord = s1
+                .map { Status.of(it) }
+            val s2 = List(5) { s[1] }.joinToString(",")
+            val damagedLengths = s2
+                .split(",").map { it.toInt() }
             arrangements(brokenRecord, damagedLengths, 0)
         }
     }
@@ -30,7 +34,7 @@ fun arrangements(brokenRecord: List<Status>, damagedLengths: List<Int>, blockRec
     if (i < blockRecordBefore) {
         val valid = isValid(brokenRecord, damagedLengths)
         if (valid) {
-            println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths + " " + valid)
+//            println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths + " " + valid)
         }
         return if (valid) 1 else 0
     }
