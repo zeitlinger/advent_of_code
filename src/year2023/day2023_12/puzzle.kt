@@ -24,7 +24,10 @@ fun main() {
             val s2 = List(5) { s[1] }.joinToString(",")
             val damagedLengths = s2
                 .split(",").map { it.toInt() }
-            arrangements(brokenRecord, damagedLengths, 0)
+            println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths)
+            val arrangements = arrangements(brokenRecord, damagedLengths, 0)
+            println("$line = $arrangements")
+            arrangements
         }
     }
 }
@@ -32,12 +35,22 @@ fun main() {
 fun arrangements(brokenRecord: List<Status>, damagedLengths: List<Int>, blockRecordBefore: Int): Long {
     val i = brokenRecord.drop(blockRecordBefore).indexOf(Status.UNKNOWN) + blockRecordBefore
     if (i < blockRecordBefore) {
-        val valid = isValid(brokenRecord, damagedLengths)
+        // all unknowns are filled
+
+        val valid = isValid(brokenRecord, damagedLengths, true)
         if (valid) {
 //            println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths + " " + valid)
         }
         return if (valid) 1 else 0
     }
+    // check all blocked records
+    if (blockRecordBefore > 0) {
+        val subList = brokenRecord.subList(0, blockRecordBefore)
+        if (subList.last() == Status.OPERATIONAL && !isValid(subList, damagedLengths, false)) {
+            return 0
+        }
+    }
+
     return tryStatus.sumOf { status ->
         arrangements(updateRecord(brokenRecord, i, status), damagedLengths, i + 1)
     }
@@ -49,8 +62,19 @@ fun updateRecord(brokenRecord: List<Status>, i: Int, status: Status): List<Statu
     }
 }
 
-fun isValid(brokenRecord: List<Status>, damagedLengths: List<Int>): Boolean {
+fun isValid(brokenRecord: List<Status>, damagedLengths: List<Int>, strict: Boolean): Boolean {
     val s = brokenRecord.map { it.symbol }.joinToString("")
     val list = s.split(".").filter { it.isNotEmpty() }.map { it.length }
-    return list == damagedLengths
+    if (strict) {
+        return list == damagedLengths
+    }
+    val startsWith = damagedLengths.startsWith(list)
+    return startsWith
+}
+
+private fun <E> List<E>.startsWith(list: List<E>): Boolean {
+    if (size < list.size) {
+        return false
+    }
+    return list.withIndex().all { (i, e) -> this[i] == e }
 }
