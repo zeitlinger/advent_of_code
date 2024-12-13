@@ -45,26 +45,24 @@ fun fewestTokensNeededToWin(clawConfig: ClawConfig): Long? {
         x += button.p.x * tokensPerTry
         y += button.p.y * tokensPerTry
         tokens += button.cost * tokensPerTry
-        println("Moving $tokensPerTry tokens with slope ${button.slope()} now at $x, $y")
+//        println("Moving $tokensPerTry tokens with slope ${button.slope()} now at $x, $y")
     }
 
     while (x < price.x && y < price.y) {
         val distanceX = price.x - x
         val distanceY = price.y - y
         val minDistance = minOf(distanceX, distanceY)
-        val maxMove = maxPerToken * tokensPerTry
-        println("Distance: ${distanceX.toDouble()}, ${distanceY.toDouble()} maxMove: ${maxMove.toDouble()}")
+//        println("Distance: ${distanceX.toDouble()}, ${distanceY.toDouble()} maxMove: ${maxMove.toDouble()}")
         val scale = 2
-        if (minDistance > scale * maxMove) {
+        if (minDistance > tokensPerTry * maxPerToken * 10) {
             tokensPerTry *= scale
-            println("Upscaling to $tokensPerTry")
+//            println("Upscaling to $tokensPerTry")
         } else {
-            var downScale = 100
-            val b = distanceX > maxMove / scale
+            var downScale = 4
             while (tokensPerTry > 1 && downScale > 1) {
                 downScale--
                 tokensPerTry /= scale
-                println("Downscaling to $tokensPerTry")
+//                println("Downscaling to $tokensPerTry")
             }
         }
 
@@ -73,11 +71,12 @@ fun fewestTokensNeededToWin(clawConfig: ClawConfig): Long? {
         val r2 = targetSlope / minSlopeButton.slope()
         // 3 / 1 = 3
         // 1 / .3 = 3.333
-        println("targetSlope: $targetSlope, r1: $r1, r2: $r2")
-        if (r1 < r2) {
-            move(maxSlopeButton)
-        } else {
-            move(minSlopeButton)
+//        println("targetSlope: $targetSlope, r1: $r1, r2: $r2")
+        when {
+            targetSlope > maxSlopeButton.slope() -> move(maxSlopeButton)
+            targetSlope < minSlopeButton.slope() -> move(minSlopeButton)
+            r2 <= r1 -> move(minSlopeButton)
+            else -> move(maxSlopeButton)
         }
         if (x == price.x && y == price.y) {
             println("For $clawConfig, possible tokens: $tokens")
@@ -98,13 +97,15 @@ fun main() {
                 Button(Point.of(it[1]), 1L)
             )
         }
-            .filterIndexed { index, clawConfig -> index == 1 } // for debugging
+//            .filterIndexed { index, clawConfig -> index == 1 } // for debugging
         println(clawConfigs)
         val list = clawConfigs.map { fewestTokensNeededToWin(it) }
-        for (i in list.indices) {
-            println("For $clawConfigs[i], $list[i]")
+        list.forEach {
+            println("For $it")
         }
-        throw IllegalStateException("Done")
+//        throw IllegalStateException("Done")
+        // 66672283412522 - too low
+        // 87596249540359
         list.filterNotNull().sum()
     }
 }
