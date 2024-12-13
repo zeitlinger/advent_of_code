@@ -30,8 +30,9 @@ fun <N : Number> puzzle(expected: N?, part: (List<String>) -> N) {
         val caller = stack.skip(1).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
+    val part1 = part(readInput(day, "test.txt"))
     if (expected != null) {
-        check(part(readInput(day, "test.txt")), expected)
+        check(part1, expected)
     }
 
     val duration = measureTime {
