@@ -46,39 +46,7 @@ fun updateRecord(brokenRecord: List<Status>, i: Int, status: Status): List<Statu
 }
 
 fun isValid(brokenRecord: List<Status>, damagedLengths: List<Int>): Boolean {
-    var damaged = 0
-    var status = Status.OPERATIONAL
-    val iterator = damagedLengths.iterator()
-    for (i in brokenRecord.indices) {
-        val next = brokenRecord[i]
-        if (next != status) {
-            when (next) {
-                Status.OPERATIONAL -> {
-                    if (!iterator.hasNext()) {
-                        return false
-                    }
-                    val want = iterator.next()
-                    if (damaged != want) {
-                        return false
-                    }
-                }
-
-                Status.DAMAGED -> {
-                    damaged = 0
-                }
-
-                else -> throw IllegalArgumentException("Invalid status")
-            }
-        }
-
-        if (next == Status.DAMAGED) {
-            damaged++
-        }
-
-        status = next
-    }
-    if (iterator.hasNext()) {
-        return damaged == iterator.next()
-    }
-    return damaged == 0
+    val s = brokenRecord.map { it.symbol }.joinToString("")
+    val list = s.split(".").filter { it.isNotEmpty() }.map { it.length }
+    return list == damagedLengths
 }
