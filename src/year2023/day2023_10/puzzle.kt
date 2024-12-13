@@ -3,6 +3,7 @@ package year2023.day2023_10
 import puzzle
 import year2023.day2023_10.Connector.NONE
 import year2023.day2023_10.Connector.START
+import javax.swing.text.Highlighter.Highlight
 
 data class Point(val x: Int, val y: Int) {
     fun move(direction: Direction): Point {
@@ -37,6 +38,58 @@ enum class Connector(val symbol: String, val directions: List<Direction>) {
     START("S", emptyList()), ;
 }
 
+data class Search(
+    val loop: List<Point>,
+    val field: List<List<Connector>>,
+    val outside: MutableSet<Point>,
+    val enclosed: MutableSet<Point>)
+
+fun lookRight(connector: Connector, from: Direction): List<Direction> {
+    return when (connector) {
+        Connector.VERTICAL -> when (from) {
+            Direction.UP -> listOf(Direction.LEFT)
+            Direction.DOWN -> listOf(Direction.RIGHT)
+            else -> throw IllegalArgumentException("Invalid direction")
+        }
+
+        Connector.HORIZONTAL -> when (from) {
+            Direction.LEFT -> listOf(Direction.DOWN)
+            Direction.RIGHT -> listOf(Direction.UP)
+            else -> throw IllegalArgumentException("Invalid direction")
+        }
+
+        Connector.UP_LEFT -> when (from) {
+            Direction.UP -> listOf()
+            Direction.LEFT -> listOf(Direction.RIGHT, Direction.DOWN)
+            else -> throw IllegalArgumentException("Invalid direction")
+        }
+
+        Connector.UP_RIGHT -> when (from) {
+            Direction.UP -> listOf(Direction.LEFT, Direction.DOWN)
+            Direction.RIGHT -> listOf()
+            else -> throw IllegalArgumentException("Invalid direction")
+        }
+
+        Connector.DOWN_LEFT -> when (from) {
+            Direction.DOWN -> listOf(Direction.RIGHT, Direction.UP)
+            Direction.LEFT -> listOf()
+            else -> throw IllegalArgumentException("Invalid direction")
+        }
+
+        Connector.DOWN_RIGHT -> when (from) {
+            Direction.DOWN -> listOf()
+            Direction.RIGHT -> listOf(Direction.LEFT, Direction.UP)
+            else -> throw IllegalArgumentException("Invalid direction")
+        }
+
+        else -> throw IllegalArgumentException("Invalid connector")
+    }
+}
+
+fun lookLeft(connector: Connector, from: Direction): List<Direction> {
+    return lookRight(connector, connector.directions.single { it != from })
+}
+
 val connectorMap = Connector.entries.associateBy { it.symbol }
 
 fun main() {
@@ -50,52 +103,92 @@ fun main() {
 fun enclosedArea(field: List<List<Connector>>, loop: List<Point>): Long {
     val outside = mutableSetOf<Point>()
     val enclosed = mutableSetOf<Point>()
+    val search = Search(loop, field, outside, enclosed)
 
-    fun grow(point: Point, area: MutableSet<Point>) {
-        if (point in outside || point in enclosed) {
-            area.clear()
-            return
-        }
-        if (point in area || point in loop) {
-            return
-        }
-        area.add(point)
-        if (point.x !in field[0].indices || point.y !in field.indices) {
-            outside.addAll(area)
-            area.clear()
-            return
-        }
+    visitLoop(search, ::lookLeft)
 
-        Direction.entries.forEach { direction ->
-            grow(point.move(direction), area)
-            if (area.isEmpty()) {
-                return
-            }
+    if (outside.isNotEmpty()) {
+        outside.clear()
+        enclosed.clear()
+        visitLoop(search, ::lookRight)
+
+        if (outside.isNotEmpty()) {
+            throw IllegalArgumentException("Invalid loop")
         }
     }
 
-    loop.forEach { point ->
-        val look = directions(field, point).map { it.opposite() }
-        look.forEach { direction ->
-            val area = mutableSetOf<Point>()
-            point.move(direction).let { grow(it, area) }
-            enclosed.addAll(area)
-        }
-    }
-    val l = field.mapIndexed { y, row ->
+    print(search)
+
+    return enclosed.size.toLong()
+}
+
+private fun print(
+    search: Search,
+    highlight: List<Point> = emptyList(),
+) {
+    val l = search.field.mapIndexed { y, row ->
         row.mapIndexed { x, connector ->
             val p = Point(x, y)
             when (p) {
-                in enclosed -> "I"
-                in outside -> "O"
-                in loop -> connector.symbol
+                in highlight -> "#"
+                in search.enclosed -> "*"
+                in search.outside -> " "
+                in search.loop -> connector.symbol
                 else -> " "
             }
         }
     }
     l.forEach { println(it.joinToString("")) }
+}
 
-    return enclosed.size.toLong()
+private fun visitLoop(
+    search: Search,
+    takeSide: (Connector, Direction) -> List<Direction>,
+) {
+    search.loop.drop(1).forEachIndexed { index, point ->
+        val last = search.loop[index]
+        val connector = search.field[point.y][point.x]
+        takeSide(connector, Direction.entries.single { point.move(it) == last }).forEach { d ->
+            val area = mutableSetOf<Point>()
+            grow(point.move(d), area, search, listOf(point))
+            if (search.outside.isNotEmpty()) {
+                return
+            }
+            search.enclosed.addAll(area)
+        }
+    }
+}
+
+fun grow(
+    point: Point,
+    area: MutableSet<Point>,
+    search: Search,
+    highlight: List<Point>,
+) {
+    println("Grow $point")
+    if (point in search.outside || point in search.enclosed) {
+        area.clear()
+        return
+    }
+    if (point in area || point in search.loop) {
+        return
+    }
+//    println("Add $point")
+//    print(search, highlight)
+    area.add(point)
+    if (point.x !in search.field[0].indices || point.y !in search.field.indices) {
+        println("Outside")
+        search.outside.addAll(area)
+        area.clear()
+        return
+    }
+
+    Direction.entries.forEach { direction ->
+        grow(point.move(direction), area, search, highlight + point)
+        if (area.isEmpty()) {
+            return
+        }
+    }
 }
 
 private fun findLoop(
@@ -129,6 +222,7 @@ private fun findLoop(
         val next = destinations.first { it !in loop }
         current = next
     }
+    loop.add(start)
     return loop
 }
 
