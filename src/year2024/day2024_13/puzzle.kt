@@ -34,7 +34,7 @@ fun fewestTokensNeededToWin(clawConfig: ClawConfig): Long? {
     val buttonB = clawConfig.buttonB
     val maxSlopeButton = if (buttonA.slope() > buttonB.slope()) buttonA else buttonB
     val minSlopeButton = if (buttonA.slope() < buttonB.slope()) buttonA else buttonB
-    println("Max slope: ${maxSlopeButton.slope()}, min slope: ${minSlopeButton.slope()}")
+//    println("Max slope: ${maxSlopeButton.slope()}, min slope: ${minSlopeButton.slope()}")
     var x = 0L
     var y = 0L
     var tokens = 0L
@@ -69,8 +69,6 @@ fun fewestTokensNeededToWin(clawConfig: ClawConfig): Long? {
         val targetSlope = distanceY.toDouble() / distanceX
         val r1 = maxSlopeButton.slope() / targetSlope
         val r2 = targetSlope / minSlopeButton.slope()
-        // 3 / 1 = 3
-        // 1 / .3 = 3.333
 //        println("targetSlope: $targetSlope, r1: $r1, r2: $r2")
         when {
             targetSlope > maxSlopeButton.slope() -> move(maxSlopeButton)
@@ -79,11 +77,11 @@ fun fewestTokensNeededToWin(clawConfig: ClawConfig): Long? {
             else -> move(maxSlopeButton)
         }
         if (x == price.x && y == price.y) {
-            println("For $clawConfig, possible tokens: $tokens")
+//            println("For $clawConfig, possible tokens: $tokens")
             return tokens
         }
     }
-    println("For $clawConfig, impossible")
+//    println("For $clawConfig, impossible")
     return null
 }
 
@@ -97,15 +95,11 @@ fun main() {
                 Button(Point.of(it[1]), 1L)
             )
         }
-//            .filterIndexed { index, clawConfig -> index == 1 } // for debugging
-        println(clawConfigs)
+//        println(clawConfigs)
         val list = clawConfigs.map { fewestTokensNeededToWin(it) }
-        list.forEach {
-            println("For $it")
-        }
-//        throw IllegalStateException("Done")
-        // 66672283412522 - too low
-        // 87596249540359
+//        list.forEach {
+//            println("For $it")
+//        }
         list.filterNotNull().sum()
     }
 }
