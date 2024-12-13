@@ -3,7 +3,6 @@ package year2023.day2023_10
 import puzzle
 import year2023.day2023_10.Connector.NONE
 import year2023.day2023_10.Connector.START
-import javax.swing.text.Highlighter.Highlight
 
 data class Point(val x: Int, val y: Int) {
     fun move(direction: Direction): Point {
@@ -165,7 +164,7 @@ fun grow(
     search: Search,
     highlight: List<Point>,
 ) {
-    println("Grow $point")
+//    println("Grow $point")
     if (point in search.outside || point in search.enclosed) {
         area.clear()
         return
@@ -177,7 +176,7 @@ fun grow(
 //    print(search, highlight)
     area.add(point)
     if (point.x !in search.field[0].indices || point.y !in search.field.indices) {
-        println("Outside")
+//        println("Outside")
         search.outside.addAll(area)
         area.clear()
         return
