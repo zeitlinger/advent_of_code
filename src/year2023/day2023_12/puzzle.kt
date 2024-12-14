@@ -37,7 +37,8 @@ fun arrangements(brokenRecord: List<Status>, damagedLengths: List<Int>, blockRec
     if (i < blockRecordBefore) {
         // all unknowns are filled
 
-        val valid = isValid(brokenRecord, damagedLengths, true)
+        val list = operationalBlocks(brokenRecord)
+        val valid = list == damagedLengths
         if (valid) {
 //            println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths + " " + valid)
         }
@@ -45,8 +46,7 @@ fun arrangements(brokenRecord: List<Status>, damagedLengths: List<Int>, blockRec
     }
     // check all blocked records
     if (blockRecordBefore > 0) {
-        val subList = brokenRecord.subList(0, blockRecordBefore)
-        if (subList.last() == Status.OPERATIONAL && !isValid(subList, damagedLengths, false)) {
+        if (!mayBeValid(brokenRecord, blockRecordBefore, damagedLengths)) {
             return 0
         }
     }
@@ -62,14 +62,27 @@ fun updateRecord(brokenRecord: List<Status>, i: Int, status: Status): List<Statu
     }
 }
 
-fun isValid(brokenRecord: List<Status>, damagedLengths: List<Int>, strict: Boolean): Boolean {
-    val s = brokenRecord.map { it.symbol }.joinToString("")
-    val list = s.split(".").filter { it.isNotEmpty() }.map { it.length }
-    if (strict) {
-        return list == damagedLengths
+fun mayBeValid(
+    brokenRecord: List<Status>,
+    blockRecordBefore: Int,
+    damagedLengths: List<Int>
+): Boolean {
+    val subList = brokenRecord.subList(0, blockRecordBefore)
+    if (subList.last() != Status.OPERATIONAL) {
+        return true
     }
-    val startsWith = damagedLengths.startsWith(list)
-    return startsWith
+
+    val list = operationalBlocks(subList)
+    if (!damagedLengths.startsWith(list)) {
+        return false
+    }
+    val remaining = damagedLengths.drop(list.size)
+    val minSize = remaining.sum() + remaining.size - 1
+    return minSize <= brokenRecord.size - blockRecordBefore
+}
+
+fun operationalBlocks(brokenRecord: List<Status>): List<Int> {
+    return brokenRecord.map { it.symbol }.joinToString("").split(".").filter { it.isNotEmpty() }.map { it.length }
 }
 
 private fun <E> List<E>.startsWith(list: List<E>): Boolean {
