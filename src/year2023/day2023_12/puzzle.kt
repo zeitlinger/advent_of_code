@@ -12,7 +12,7 @@ enum class Status(val symbol: Char) {
     }
 }
 
-val tryStatus = listOf(Status.OPERATIONAL, Status.DAMAGED)
+val tryStates = listOf(Status.OPERATIONAL, Status.DAMAGED)
 
 fun main() {
     puzzle(525152) { lines ->
@@ -32,62 +32,33 @@ fun main() {
     }
 }
 
-fun arrangements(brokenRecord: List<Status>, damagedLengths: List<Int>, blockRecordBefore: Int): Long {
-    val i = brokenRecord.drop(blockRecordBefore).indexOf(Status.UNKNOWN) + blockRecordBefore
-    if (i < blockRecordBefore) {
-        // all unknowns are filled
-
-        val list = operationalBlocks(brokenRecord)
-        val valid = list == damagedLengths
-        if (valid) {
-//            println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths + " " + valid)
-        }
-        return if (valid) 1 else 0
+fun arrangements(brokenRecord: List<Status>, damagedLengths: List<Int>, damagedSpan: Int): Long {
+    if (brokenRecord.isEmpty()) {
+        return if (damagedLengths.isEmpty()) 1 else 0
     }
-    // check all blocked records
-    if (blockRecordBefore > 0) {
-        if (!mayBeValid(brokenRecord, blockRecordBefore, damagedLengths)) {
-            return 0
-        }
+    if (damagedLengths.isEmpty()) {
+        return if (brokenRecord.all { it == Status.OPERATIONAL }) 1 else 0
     }
 
-    return tryStatus.sumOf { status ->
-        arrangements(updateRecord(brokenRecord, i, status), damagedLengths, i + 1)
-    }
+    return tryStatus(brokenRecord.first(), brokenRecord, damagedLengths, damagedSpan)
 }
 
-fun updateRecord(brokenRecord: List<Status>, i: Int, status: Status): List<Status> {
-    return brokenRecord.toMutableList().apply {
-        set(i, status)
-    }
-}
-
-fun mayBeValid(
+private fun tryStatus(
+    first: Status,
     brokenRecord: List<Status>,
-    blockRecordBefore: Int,
-    damagedLengths: List<Int>
-): Boolean {
-    val subList = brokenRecord.subList(0, blockRecordBefore)
-    if (subList.last() != Status.OPERATIONAL) {
-        return true
+    damagedLengths: List<Int>,
+    damagedSpan: Int
+): Long {
+    return when (first) {
+        Status.DAMAGED -> arrangements(brokenRecord.drop(1), damagedLengths, damagedSpan + 1)
+        Status.OPERATIONAL -> when {
+            damagedSpan > 0 && damagedLengths.first() != damagedSpan -> 0
+            else -> arrangements(brokenRecord.drop(1), damagedLengths, 0)
+        }
+        // unknown
+        else -> tryStates.sumOf { status ->
+            tryStatus(status, brokenRecord, damagedLengths, damagedSpan)
+        }
     }
-
-    val list = operationalBlocks(subList)
-    if (!damagedLengths.startsWith(list)) {
-        return false
-    }
-    val remaining = damagedLengths.drop(list.size)
-    val minSize = remaining.sum() + remaining.size - 1
-    return minSize <= brokenRecord.size - blockRecordBefore
 }
 
-fun operationalBlocks(brokenRecord: List<Status>): List<Int> {
-    return brokenRecord.map { it.symbol }.joinToString("").split(".").filter { it.isNotEmpty() }.map { it.length }
-}
-
-private fun <E> List<E>.startsWith(list: List<E>): Boolean {
-    if (size < list.size) {
-        return false
-    }
-    return list.withIndex().all { (i, e) -> this[i] == e }
-}
