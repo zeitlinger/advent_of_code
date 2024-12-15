@@ -72,10 +72,8 @@ fun main() {
         var robot = findRobot(warehouse)
         printWarehouse(warehouse)
         moves.forEachIndexed { index, move ->
-            println("Move: $move, Index: $index")
-            printWarehouse(warehouse, move)
-            val old = warehouse.toMutableList()
-            robot = attemptMove(move, robot, warehouse)
+            val old = warehouse.map { it.toMutableList() }.toMutableList()
+            robot = attemptMove(move, robot, warehouse, index)
             assertConsistency(warehouse, old)
 //            sleep(200)
         }
@@ -115,18 +113,26 @@ fun stats(list: MutableList<MutableList<Tile>>): Map<Tile, Int> {
 }
 
 fun printWarehouse(warehouse: MutableList<MutableList<Tile>>, move: Direction? = null) {
-    warehouse.forEach { row ->
-        println(
-            row
-                .map { if (it == Tile.ROBOT) move?.symbol ?: it.symbol else it.symbol }
-                .joinToString("") { it.toString() })
+    val header = "   " + (0 until warehouse[0].size).joinToString("") { (it % 10).toString() }
+    val lines = mutableListOf(header)
+    warehouse.forEachIndexed { index, row ->
+        lines.add(
+            index.toString().padEnd(3) +
+                    row
+                        .map { if (it == Tile.ROBOT) move?.symbol ?: it.symbol else it.symbol }
+                        .joinToString("") { it.toString() })
+    }
+    lines.forEach {
+        print(it.take(3))
+        println(it.drop(3).chunked(5).joinToString(" "))
     }
 }
 
 fun attemptMove(
     move: Direction,
     robot: Point,
-    warehouse: MutableList<MutableList<Tile>>
+    warehouse: MutableList<MutableList<Tile>>,
+    index: Int
 ): Point {
     val next = move.move(robot)
     val freeSpaceAhead = freeSpaceAhead(move, listOf(next), warehouse)
@@ -137,7 +143,7 @@ fun attemptMove(
         printWarehouse(warehouse, move)
     }
 
-    pushBox(move, listOf(next), warehouse)
+    pushBox(move, listOf(next), warehouse, index)
     warehouse[robot.y][robot.x] = Tile.EMPTY
     warehouse[next.y][next.x] = Tile.ROBOT
 
@@ -147,12 +153,22 @@ fun attemptMove(
     return next
 }
 
-fun pushBox(direction: Direction, points: List<Point>, warehouse: MutableList<MutableList<Tile>>) {
+fun pushBox(
+    direction: Direction,
+    points: List<Point>,
+    warehouse: MutableList<MutableList<Tile>>,
+    index: Int,
+    recursive: Boolean = false
+): Boolean {
     val tiles = points.map { warehouse[it.y][it.x] }
-    if (tiles.all { it == Tile.EMPTY }) return
+    if (tiles.all { it == Tile.EMPTY }) return false
 
+    if (!recursive) {
+        println("Move: $direction, Index: $index")
+        printWarehouse(warehouse, direction)
+    }
     val next = nextPoints(points, direction, warehouse)
-    pushBox(direction, next, warehouse)
+    pushBox(direction, next, warehouse, index, true)
 
     next.forEach { point ->
         val from = direction.opposite().move(point)
@@ -160,6 +176,12 @@ fun pushBox(direction: Direction, points: List<Point>, warehouse: MutableList<Mu
         warehouse[to.y][to.x] = warehouse[from.y][from.x]
         warehouse[from.y][from.x] = Tile.EMPTY
     }
+
+    if (!recursive) {
+    println("after push")
+    printWarehouse(warehouse, direction)
+    }
+    return true
 }
 
 fun freeSpaceAhead(
@@ -181,7 +203,7 @@ private fun nextPoints(
     direction: Direction,
     warehouse: MutableList<MutableList<Tile>>
 ): List<Point> {
-    val next = points.toMutableList()
+    val next = points.filter { warehouse[it.y][it.x] != Tile.EMPTY }.toMutableSet()
     next.toList().forEach { point ->
         val tile = warehouse[point.y][point.x]
         if (direction == Direction.UP) {
