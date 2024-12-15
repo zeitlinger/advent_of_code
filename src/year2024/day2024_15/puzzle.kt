@@ -1,6 +1,7 @@
 package year2024.day2024_15
 
 import puzzle
+import java.lang.Thread.sleep
 
 data class Point(val x: Int, val y: Int) {
     fun gps(): Int = y * 100 + x
@@ -72,10 +73,11 @@ fun main() {
         var robot = findRobot(warehouse)
         printWarehouse(warehouse)
         moves.forEachIndexed { index, move ->
-            robot = attemptMove(move, robot, warehouse)
             println("Move: $move, Index: $index")
-            printWarehouse(warehouse)
+            printWarehouse(warehouse, move)
+            robot = attemptMove(move, robot, warehouse)
             assertConsistency(warehouse)
+//            sleep(200)
         }
         printWarehouse(warehouse)
         warehouse.flatMapIndexed { y: Int, row: MutableList<Tile> ->
@@ -103,9 +105,15 @@ fun assertConsistency(warehouse: MutableList<MutableList<Tile>>) {
     }
 }
 
-fun printWarehouse(warehouse: MutableList<MutableList<Tile>>) {
+fun printWarehouse(warehouse: MutableList<MutableList<Tile>>, move: Direction? = null) {
+//    System.out.print(String.format("\033[%dA",count)); // Move up
+//    print ('\f');
+//    Runtime.getRuntime().exec("clear");
+//    print('\u000C');
     warehouse.forEach { row ->
-        println(row.joinToString("") { it.symbol.toString() })
+        println(row
+            .map { if (it == Tile.ROBOT) move?.symbol ?: it.symbol else it.symbol }
+            .joinToString("") { it.toString() })
     }
 }
 
