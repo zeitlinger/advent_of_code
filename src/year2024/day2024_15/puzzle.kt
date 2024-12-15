@@ -93,11 +93,13 @@ fun assertConsistency(warehouse: MutableList<MutableList<Tile>>, old: MutableLis
         row.forEachIndexed { index, tile ->
             if (tile == Tile.BOX_LEFT) {
                 if (row[index + 1] != Tile.BOX_RIGHT) {
+                    printWarehouse(warehouse)
                     throw IllegalStateException("Box left without box right")
                 }
             }
             if (tile == Tile.BOX_RIGHT) {
                 if (row[index - 1] != Tile.BOX_LEFT) {
+                    printWarehouse(warehouse)
                     throw IllegalStateException("Box right without box left")
                 }
             }
@@ -120,8 +122,8 @@ fun printWarehouse(warehouse: MutableList<MutableList<Tile>>, move: Direction? =
     warehouse.forEach { row ->
         println(
             row
-            .map { if (it == Tile.ROBOT) move?.symbol ?: it.symbol else it.symbol }
-            .joinToString("") { it.toString() })
+                .map { if (it == Tile.ROBOT) move?.symbol ?: it.symbol else it.symbol }
+                .joinToString("") { it.toString() })
     }
 }
 
@@ -153,7 +155,7 @@ fun pushBox(direction: Direction, points: List<Point>, warehouse: MutableList<Mu
     val tiles = points.map { warehouse[it.y][it.x] }
     if (tiles.all { it == Tile.EMPTY }) return
 
-    val next = nextPoints(points, direction, tiles)
+    val next = nextPoints(points, direction, warehouse)
     pushBox(direction, next, warehouse)
 
     next.forEach { point ->
@@ -173,7 +175,7 @@ fun freeSpaceAhead(
     if (tiles.any { it == Tile.WALL }) return null
     if (tiles.all { it == Tile.EMPTY }) return points
 
-    val next = nextPoints(points, direction, tiles)
+    val next = nextPoints(points, direction, warehouse)
 
     return freeSpaceAhead(direction, next, warehouse)
 }
@@ -181,23 +183,26 @@ fun freeSpaceAhead(
 private fun nextPoints(
     points: List<Point>,
     direction: Direction,
-    tiles: List<Tile>
+    warehouse: MutableList<MutableList<Tile>>
 ): List<Point> {
     val next = points.map { direction.move(it) }.toMutableList()
-    if (direction == Direction.UP) {
-        if (tiles.first() == Tile.BOX_RIGHT) {
-            next.add(0, Direction.LEFT.move(next.first()))
+    next.toList().forEach { point ->
+        val tile = warehouse[point.y][point.x]
+        if (direction == Direction.UP) {
+            if (tile == Tile.BOX_RIGHT) {
+                next.add(Direction.LEFT.move(next.first()))
+            }
+            if (tile == Tile.BOX_LEFT) {
+                next.add(Direction.RIGHT.move(next.last()))
+            }
         }
-        if (tiles.last() == Tile.BOX_LEFT) {
-            next.add(Direction.RIGHT.move(next.last()))
-        }
-    }
-    if (direction == Direction.DOWN) {
-        if (tiles.first() == Tile.BOX_LEFT) {
-            next.add(0, Direction.RIGHT.move(next.first()))
-        }
-        if (tiles.last() == Tile.BOX_RIGHT) {
-            next.add(Direction.LEFT.move(next.last()))
+        if (direction == Direction.DOWN) {
+            if (tile == Tile.BOX_LEFT) {
+                next.add(Direction.RIGHT.move(next.first()))
+            }
+            if (tile == Tile.BOX_RIGHT) {
+                next.add(Direction.LEFT.move(next.last()))
+            }
         }
     }
     return next
