@@ -26,13 +26,11 @@ fun main() {
             val damagedLengths = s2
                 .split(",").map { it.toInt() }
             println(brokenRecord.joinToString("") { it.symbol.toString() } + " " + damagedLengths)
-            val arrangements = arrangements(
+            val arrangements = arrangementsCached(
                 Arrangement(
                     brokenRecord,
                     emptyList(),
-                    0,
                     damagedLengths,
-                    0,
                     0
                 )
             )
@@ -42,19 +40,31 @@ fun main() {
     }
 }
 
+data class CacheKey(
+    val brokenRecord: List<Status>,
+    val damagedLengths: List<Int>,
+    val damagedSpan: Int
+)
+
 data class Arrangement(
     val brokenRecord: List<Status>,
     val fixedRecord: List<Status>,
-    val brokenRecordIndex: Int,
     val damagedLengths: List<Int>,
-    val damagedLengthsIndex: Int,
-    val damagedSpan: Int)
+    val damagedSpan: Int,
+    val cache: MutableMap<CacheKey, Long> = mutableMapOf(),
+)
+
+fun arrangementsCached(a: Arrangement): Long {
+    return a.cache.getOrPut(CacheKey(a.brokenRecord, a.damagedLengths, a.damagedSpan)) {
+        arrangements(a)
+    }
+}
 
 fun arrangements(a: Arrangement): Long {
-    var damagedLengthsIndex = a.damagedLengthsIndex
-    if (a.brokenRecordIndex == a.brokenRecord.size) {
+    var damagedLengthsIndex = 0
+    if (a.brokenRecord.isEmpty()) {
         if (a.damagedSpan > 0) {
-            if (a.damagedSpan != a.damagedLengths[damagedLengthsIndex]) {
+            if (a.damagedSpan != a.damagedLengths.first()) {
                 return 0
             }
             damagedLengthsIndex++
@@ -66,9 +76,8 @@ fun arrangements(a: Arrangement): Long {
             0
         }
     }
-    if (damagedLengthsIndex == a.damagedLengths.size) {
-        return if (a.brokenRecord.subList(a.brokenRecordIndex, a.brokenRecord.size)
-                .none { it == Status.DAMAGED }
+    if (a.damagedLengths.isEmpty()) {
+        return if (a.brokenRecord.none { it == Status.DAMAGED }
         ) {
             1
         } else {
@@ -78,11 +87,11 @@ fun arrangements(a: Arrangement): Long {
 
     val neededSpace = a.damagedLengths.subList(damagedLengthsIndex, a.damagedLengths.size)
         .sum() + a.damagedLengths.size - damagedLengthsIndex - 1 - a.damagedSpan
-    if (a.brokenRecord.size - a.brokenRecordIndex < neededSpace) {
+    if (a.brokenRecord.size < neededSpace) {
         return 0
     }
 
-    return tryStatus(a.brokenRecord[a.brokenRecordIndex], a)
+    return tryStatus(a.brokenRecord.first(), a)
 }
 
 private fun tryStatus(
@@ -91,34 +100,37 @@ private fun tryStatus(
 ): Long {
     return when (first) {
         Status.DAMAGED -> {
-            if (a.damagedSpan >= a.damagedLengths[a.damagedLengthsIndex]) {
+            if (a.damagedSpan >= a.damagedLengths.first()) {
                 return 0
             }
 
-            arrangements(
+            arrangementsCached(
                 a.copy(
-                    brokenRecordIndex = a.brokenRecordIndex + 1,
+                    brokenRecord = a.brokenRecord.subList(1, a.brokenRecord.size),
                     fixedRecord = a.fixedRecord + Status.DAMAGED,
                     damagedSpan = a.damagedSpan + 1
                 )
             )
         }
+
         Status.OPERATIONAL -> {
             val i = if (a.damagedSpan > 0) {
-                val want = a.damagedLengths[a.damagedLengthsIndex]
+                val want = a.damagedLengths.first()
                 if (want != a.damagedSpan) {
                     return 0
                 }
-               a.damagedLengthsIndex + 1
+                1
             } else {
-                a.damagedLengthsIndex
+                0
             }
-            arrangements(a.copy(
-                brokenRecordIndex = a.brokenRecordIndex + 1,
-                damagedLengthsIndex = i,
-                damagedSpan = 0,
-                fixedRecord = a.fixedRecord + Status.OPERATIONAL
-                ))
+            arrangementsCached(
+                a.copy(
+                    brokenRecord = a.brokenRecord.subList(1, a.brokenRecord.size),
+                    damagedLengths = a.damagedLengths.subList(i, a.damagedLengths.size),
+                    damagedSpan = 0,
+                    fixedRecord = a.fixedRecord + Status.OPERATIONAL
+                )
+            )
         }
         // unknown
         else -> tryStates.sumOf { status ->
