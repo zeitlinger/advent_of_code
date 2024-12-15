@@ -1,7 +1,6 @@
 package year2024.day2024_15
 
 import puzzle
-import java.lang.Thread.sleep
 
 data class Point(val x: Int, val y: Int) {
     fun gps(): Int = y * 100 + x
@@ -73,10 +72,11 @@ fun main() {
         var robot = findRobot(warehouse)
         printWarehouse(warehouse)
         moves.forEachIndexed { index, move ->
-            println("Move: $move, Index: $index")
-            printWarehouse(warehouse, move)
+//            println("Move: $move, Index: $index")
+//            printWarehouse(warehouse, move)
+            val old = warehouse.toMutableList()
             robot = attemptMove(move, robot, warehouse)
-            assertConsistency(warehouse)
+            assertConsistency(warehouse, old)
 //            sleep(200)
         }
         printWarehouse(warehouse)
@@ -88,7 +88,7 @@ fun main() {
     }
 }
 
-fun assertConsistency(warehouse: MutableList<MutableList<Tile>>) {
+fun assertConsistency(warehouse: MutableList<MutableList<Tile>>, old: MutableList<MutableList<Tile>>) {
     warehouse.forEach { row ->
         row.forEachIndexed { index, tile ->
             if (tile == Tile.BOX_LEFT) {
@@ -103,6 +103,13 @@ fun assertConsistency(warehouse: MutableList<MutableList<Tile>>) {
             }
         }
     }
+    if (stats(old) != stats(warehouse)) {
+        throw IllegalStateException("Stats do not match")
+    }
+}
+
+fun stats(list: MutableList<MutableList<Tile>>): Map<Tile, Int> {
+    return list.flatten().groupBy { it }.mapValues { it.value.size }
 }
 
 fun printWarehouse(warehouse: MutableList<MutableList<Tile>>, move: Direction? = null) {
@@ -111,7 +118,8 @@ fun printWarehouse(warehouse: MutableList<MutableList<Tile>>, move: Direction? =
 //    Runtime.getRuntime().exec("clear");
 //    print('\u000C');
     warehouse.forEach { row ->
-        println(row
+        println(
+            row
             .map { if (it == Tile.ROBOT) move?.symbol ?: it.symbol else it.symbol }
             .joinToString("") { it.toString() })
     }
@@ -123,11 +131,21 @@ fun attemptMove(
     warehouse: MutableList<MutableList<Tile>>
 ): Point {
     val next = move.move(robot)
-    freeSpaceAhead(move, listOf(next), warehouse) ?: return robot
+    val freeSpaceAhead = freeSpaceAhead(move, listOf(next), warehouse)
+    freeSpaceAhead ?: return robot
+
+    if (freeSpaceAhead.size > 2) {
+        println("Free space ahead: $freeSpaceAhead")
+        printWarehouse(warehouse, move)
+    }
 
     pushBox(move, listOf(next), warehouse)
     warehouse[robot.y][robot.x] = Tile.EMPTY
     warehouse[next.y][next.x] = Tile.ROBOT
+
+    if (freeSpaceAhead.size > 2) {
+        printWarehouse(warehouse, move)
+    }
     return next
 }
 
