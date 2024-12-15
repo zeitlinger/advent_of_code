@@ -72,8 +72,8 @@ fun main() {
         var robot = findRobot(warehouse)
         printWarehouse(warehouse)
         moves.forEachIndexed { index, move ->
-//            println("Move: $move, Index: $index")
-//            printWarehouse(warehouse, move)
+            println("Move: $move, Index: $index")
+            printWarehouse(warehouse, move)
             val old = warehouse.toMutableList()
             robot = attemptMove(move, robot, warehouse)
             assertConsistency(warehouse, old)
@@ -115,10 +115,6 @@ fun stats(list: MutableList<MutableList<Tile>>): Map<Tile, Int> {
 }
 
 fun printWarehouse(warehouse: MutableList<MutableList<Tile>>, move: Direction? = null) {
-//    System.out.print(String.format("\033[%dA",count)); // Move up
-//    print ('\f');
-//    Runtime.getRuntime().exec("clear");
-//    print('\u000C');
     warehouse.forEach { row ->
         println(
             row
@@ -185,27 +181,27 @@ private fun nextPoints(
     direction: Direction,
     warehouse: MutableList<MutableList<Tile>>
 ): List<Point> {
-    val next = points.map { direction.move(it) }.toMutableList()
+    val next = points.toMutableList()
     next.toList().forEach { point ->
         val tile = warehouse[point.y][point.x]
         if (direction == Direction.UP) {
             if (tile == Tile.BOX_RIGHT) {
-                next.add(Direction.LEFT.move(next.first()))
+                next.add(Direction.LEFT.move(point))
             }
             if (tile == Tile.BOX_LEFT) {
-                next.add(Direction.RIGHT.move(next.last()))
+                next.add(Direction.RIGHT.move(point))
             }
         }
         if (direction == Direction.DOWN) {
             if (tile == Tile.BOX_LEFT) {
-                next.add(Direction.RIGHT.move(next.first()))
+                next.add(Direction.RIGHT.move(point))
             }
             if (tile == Tile.BOX_RIGHT) {
-                next.add(Direction.LEFT.move(next.last()))
+                next.add(Direction.LEFT.move(point))
             }
         }
     }
-    return next
+    return next.map { direction.move(it) }.toList()
 }
 
 fun findRobot(warehouse: MutableList<MutableList<Tile>>): Point {
