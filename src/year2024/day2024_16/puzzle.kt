@@ -43,7 +43,7 @@ data class Visit(val point: Point, val direction: Direction)
 
 data class VisitWithScore(val visit: Visit, val score: Int, val path: List<Visit>)
 
-data class Game(val maze: Maze, val minScore: MutableMap<Visit, Int?>, val open: TreeSet<VisitWithScore>)
+data class Game(val maze: Maze, val minScore: MutableMap<Visit, Int?>, val open: MutableList<VisitWithScore>)
 
 fun main() {
     puzzle(64) { lines ->
@@ -60,12 +60,11 @@ fun main() {
             }
         }.flatten().first()
 
-        val open =
+        val visit = Visit(start, Direction.RIGHT)
+        val open = mutableListOf(VisitWithScore(visit, 0, listOf(visit)))
 //            TreeSet(compareBy<VisitWithScore> { it.score }
 //                .thenBy { it.visit.point }
 //                .thenBy { it.visit.direction })
-        val visit = Visit(start, Direction.RIGHT)
-        open.add(VisitWithScore(visit, 0, listOf(visit)))
         val game = Game(maze, minScore, open)
 
         runGame(game)
@@ -106,8 +105,8 @@ fun moveReindeer(visitWithScore: VisitWithScore, game: Game): VisitWithScore? {
         return visitWithScore
     }
 
-    println("Trying visit: $visit with score: $score")
-    maze.print(visitWithScore.path)
+//    println("Trying visit: $visit with score: $score")
+//    maze.print(visitWithScore.path)
 
     if (visitWithScore.path.take(visitWithScore.path.size - 1).contains(visit)) {
 //        return null
@@ -116,7 +115,7 @@ fun moveReindeer(visitWithScore: VisitWithScore, game: Game): VisitWithScore? {
     val minScore = game.minScore
     val last = minScore[visit]
     if (last != null && last < score) {
-        println("Skipping visit: $visit with score: $score")
+//        println("Skipping visit: $visit with score: $score")
         return null
     }
     minScore[visit] = score
@@ -126,7 +125,7 @@ fun moveReindeer(visitWithScore: VisitWithScore, game: Game): VisitWithScore? {
     if (maze.tile(forward) != Tile.WALL) {
         open.add(VisitWithScore(Visit(forward, direction), score + 1, visitWithScore.path + Visit(forward, direction)))
     }       else {
-        println("Wall at $forward")
+//        println("Wall at $forward")
     }
 
     fun addTurn(old: Direction, turn: (Direction) -> Direction) {
