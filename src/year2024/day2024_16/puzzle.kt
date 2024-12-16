@@ -35,6 +35,7 @@ data class Maze(val tiles: List<List<Tile>>) {
 data class Visit(val point: Point, val direction: Direction)
 
 fun main() {
+    // use -Xss8M to increase stack size
     puzzle(11048) { lines ->
         val maze = Maze(lines.map { it.map { c -> Tile.of(c) } })
         val minScore = mutableMapOf<Visit, Int?>()
