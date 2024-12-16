@@ -12,10 +12,17 @@ enum class Content(val symbol: Char) {
     }
 }
 
-data class Tile(val content: Content, val point: Point)
+data class Tile(var content: Content, val point: Point) {
+    fun flip() {
+        content = when (content) {
+            Content.EMPTY -> Content.MIRROR
+            Content.MIRROR -> Content.EMPTY
+        }
+    }
+}
 
 fun main() {
-    puzzle(405, keepEmptyRows = true) { lines ->
+    puzzle(400, keepEmptyRows = true) { lines ->
         val valleys = lineBlocks(lines).map { block ->
             block.mapIndexed { y, row ->
                 row.mapIndexed { x, c ->
@@ -25,32 +32,54 @@ fun main() {
         }
         valleys.sumOf { valley ->
             println("next valley")
-            valley.forEach { row ->
-                println(row.joinToString("") { it.content.symbol.toString() })
-            }
+            printValley(valley)
+            val old = findReflection(valley, -1)
 
-            val value = (1 until valley.size)
-                .filter {
-                    val mirror = isVerticalMirror(valley, it)
-                    if (mirror) {
-                        println("Vertical mirror at $it")
-                    }
-                    mirror
-                }.sumOf { it * 100 } +
-                    (1 until valley[0].size)
-                        .filter {
-                            val mirror = isHorizontalMirror(valley, it)
-                            if (mirror) {
-                                println("Horizontal mirror at $it")
-                            }
-                            mirror
-                        }.sum()
-            if (value == 0) {
-                throw Exception("No mirror found")
-            }
-            value
+            valleyValue(valley, old)
         }
     }
+}
+
+private fun printValley(valley: List<List<Tile>>) {
+    valley.forEach { row ->
+        println(row.joinToString("") { it.content.symbol.toString() })
+    }
+}
+
+private fun valleyValue(valley: List<List<Tile>>, old: Int): Int {
+    valley.forEach { row ->
+        row.forEach { tile ->
+            tile.flip()
+            val reflection = findReflection(valley, old)
+            if (reflection > 0) {
+                println("Reflection at ${tile.point} old $old new $reflection")
+                printValley(valley)
+                return reflection
+            }
+            tile.flip()
+        }
+    }
+    throw IllegalStateException("No reflection found")
+}
+
+private fun findReflection(valley: List<List<Tile>>, old: Int): Int {
+    val value = (1 until valley.size)
+        .filter {
+            val mirror = isVerticalMirror(valley, it)
+            if (mirror) {
+                println("Vertical mirror at $it")
+            }
+            mirror
+        }.map { it * 100 } +
+            (1 until valley[0].size)
+                .filter {
+                    val mirror = isHorizontalMirror(valley, it)
+                    if (mirror) {
+                        println("Horizontal mirror at $it")
+                    }
+                    mirror
+                }
+    return value.singleOrNull { it != old } ?: 0
 }
 
 fun isHorizontalMirror(valley: List<List<Tile>>, left: Int): Boolean {
