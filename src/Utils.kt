@@ -7,7 +7,7 @@ import kotlin.time.measureTime
 /**
  * Reads lines from the given input txt file.
  */
-fun readInput(day: String, name: String) = Path("src/$day", name).readText().trim().lines().filter { it.isNotBlank() }
+fun readInput(day: String, name: String, keepEmptyRows: Boolean) = Path("src/$day", name).readText().trim().lines().filter { keepEmptyRows || it.isNotBlank() }
 
 /**
  * Converts string to md5 hash.
@@ -25,17 +25,17 @@ fun <N : Number> check(got: N, expected: N) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
-fun <N : Number> puzzle(expected: N?, part: (List<String>) -> N) {
+fun <N : Number> puzzle(expected: N?, keepEmptyRows: Boolean = false, part: (List<String>) -> N) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(1).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
     if (expected != null) {
-        check(part(readInput(day, "test.txt")), expected)
+        check(part(readInput(day, "test.txt", keepEmptyRows)), expected)
     }
 
     val duration = measureTime {
-        val input = readInput(day, "input.txt")
+        val input = readInput(day, "input.txt", keepEmptyRows)
         part(input).println()
     }
     println("Time: $duration")
