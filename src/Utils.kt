@@ -43,9 +43,19 @@ fun <N : Number> puzzle(expected: N?, part: (List<String>) -> N) {
 }
 
 
-data class Point(val x: Int, val y: Int) {
+data class Point(val x: Int, val y: Int): Comparable<Point> {
     fun move(direction: Direction): Point {
         return Point(x + direction.x, y + direction.y)
+    }
+
+    override fun compareTo(other: Point): Int {
+        return when {
+            y < other.y -> -1
+            y > other.y -> 1
+            x < other.x -> -1
+            x > other.x -> 1
+            else -> 0
+        }
     }
 }
 
