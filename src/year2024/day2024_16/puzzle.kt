@@ -50,18 +50,24 @@ fun main() {
             }
         }.flatten().first()
 
-        moveReindeer(maze, start, Direction.RIGHT, minScore)!!
+        moveReindeer(maze, start, Direction.RIGHT, minScore, 0)!!
     }
 }
 
-fun moveReindeer(maze: Maze, start: Point, direction: Direction, minScore: MutableMap<Visit, Int?>): Int? {
+fun moveReindeer(maze: Maze, start: Point, direction: Direction, minScore: MutableMap<Visit, Int?>, score: Int): Int? {
     if (maze.tile(start) == Tile.END) {
-        return 0
+        return score
     }
 
     val visit = Visit(start, direction)
     if (minScore.containsKey(visit)) {
-        return minScore[visit]
+        val last = minScore[visit]
+        last?.let {
+            if (it <= score) {
+                return it
+            }
+            return null
+        }
     }
 
     minScore[visit] = null // don't visit again
@@ -71,13 +77,13 @@ fun moveReindeer(maze: Maze, start: Point, direction: Direction, minScore: Mutab
         if (maze.tile(next) == Tile.WALL) {
             null
         } else {
-            moveReindeer(maze, next, direction, minScore)?.let { 1 + it }
+            moveReindeer(maze, next, direction, minScore, score + 1)
         }
 
-    val left = moveReindeer(maze, start, direction.turnLeft(), minScore)?.let { 1000 + it }
-    val right = moveReindeer(maze, start, direction.turnRight(), minScore)?.let { 1000 + it }
+    val left = moveReindeer(maze, start, direction.turnLeft(), minScore, score + 1000)
+    val right = moveReindeer(maze, start, direction.turnRight(), minScore, score + 1000)
 
-    val score = listOfNotNull(left, right, ahead).minOrNull()
-    minScore[visit] = score
-    return score
+    return listOfNotNull(left, right, ahead)
+        .minOrNull()
+        ?.also { minScore[visit] = it }
 }
