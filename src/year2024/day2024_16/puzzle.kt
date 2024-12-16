@@ -3,7 +3,6 @@ package year2024.day2024_16
 import Direction
 import Point
 import puzzle
-import java.util.TreeSet
 
 enum class Tile(val symbol: Char) {
     WALL('#'),
@@ -61,11 +60,7 @@ fun main() {
         }.flatten().first()
 
         val visit = Visit(start, Direction.RIGHT)
-        val open = mutableListOf(VisitWithScore(visit, 0, listOf(visit)))
-//            TreeSet(compareBy<VisitWithScore> { it.score }
-//                .thenBy { it.visit.point }
-//                .thenBy { it.visit.direction })
-        val game = Game(maze, minScore, open)
+        val game = Game(maze, minScore, mutableListOf(VisitWithScore(visit, 0, listOf(visit))))
 
         runGame(game)
     }
@@ -81,8 +76,8 @@ private fun runGame(game: Game): Int {
         val finalScore = moveReindeer(visitWithScore, game)
         if (finalScore != null) {
             finalScores.add(finalScore)
-            println("Final score: ${finalScore.score}")
-            game.maze.print(finalScore.path)
+//            println("Final score: ${finalScore.score}")
+//            game.maze.print(finalScore.path)
         }
     }
 
@@ -131,11 +126,11 @@ fun moveReindeer(visitWithScore: VisitWithScore, game: Game): VisitWithScore? {
     fun addTurn(old: Direction, turn: (Direction) -> Direction) {
         val d = turn(old)
         val n = start.move(d)
-//        if (maze.tile(n) != Tile.WALL
-//            &&
-//            !minScore.containsKey(Visit(n, direction)) &&
-//            !minScore.containsKey(Visit(n, old.opposite()))
-//        ) {
+        if (maze.tile(n) != Tile.WALL
+            &&
+            !minScore.containsKey(Visit(n, direction)) &&
+            !minScore.containsKey(Visit(n, old.opposite()))
+        ) {
             open.add(
                 VisitWithScore(
                     Visit(start, d),
@@ -143,7 +138,7 @@ fun moveReindeer(visitWithScore: VisitWithScore, game: Game): VisitWithScore? {
                     visitWithScore.path + Visit(start, d)
                 )
             )
-//        }
+        }
     }
 
     addTurn(direction, Direction::turnLeft)
