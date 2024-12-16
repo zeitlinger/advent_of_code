@@ -42,3 +42,51 @@ fun <N : Number> puzzle(expected: N?, part: (List<String>) -> N) {
 
 }
 
+
+data class Point(val x: Int, val y: Int) {
+    fun move(direction: Direction): Point {
+        return Point(x + direction.x, y + direction.y)
+    }
+}
+
+enum class Direction(val x: Int, val y: Int, val symbol: Char) {
+    UP(0, -1, '^'),
+    DOWN(0, 1, 'v'),
+    LEFT(-1, 0, '<'),
+    RIGHT(1, 0, '>');
+
+    fun turnLeft(): Direction {
+        return when (this) {
+            UP -> LEFT
+            DOWN -> RIGHT
+            LEFT -> DOWN
+            RIGHT -> UP
+        }
+    }
+
+    fun turnRight(): Direction {
+        return when (this) {
+            UP -> RIGHT
+            DOWN -> LEFT
+            LEFT -> UP
+            RIGHT -> DOWN
+        }
+    }
+
+    fun opposite(): Direction {
+        return when (this) {
+            UP -> DOWN
+            DOWN -> UP
+            LEFT -> RIGHT
+            RIGHT -> LEFT
+        }
+    }
+
+    companion object {
+        fun of(c: Char): Direction {
+            return entries.single { it.symbol == c }
+        }
+    }
+}
+
+
