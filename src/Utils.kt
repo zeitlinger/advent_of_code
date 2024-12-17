@@ -7,7 +7,8 @@ import kotlin.time.measureTime
 /**
  * Reads lines from the given input txt file.
  */
-fun readInput(day: String, name: String, keepEmptyRows: Boolean) = Path("src/$day", name).readText().trim().lines().filter { keepEmptyRows || it.isNotBlank() }
+fun readInput(day: String, name: String, keepEmptyRows: Boolean) =
+    Path("src/$day", name).readText().trim().lines().filter { keepEmptyRows || it.isNotBlank() }
 
 /**
  * Converts string to md5 hash.
@@ -21,11 +22,15 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
  */
 fun Any?.println() = println(this)
 
-fun <N : Number> check(got: N, expected: N) {
+fun check(got: String, expected: String) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
 fun <N : Number> puzzle(expected: N?, keepEmptyRows: Boolean = false, part: (List<String>) -> N) {
+    stringPuzzle(expected?.toString(), keepEmptyRows) { lines -> part(lines).toString() }
+}
+
+fun stringPuzzle(expected: String?, keepEmptyRows: Boolean = false, part: (List<String>) -> String) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(1).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
@@ -39,11 +44,9 @@ fun <N : Number> puzzle(expected: N?, keepEmptyRows: Boolean = false, part: (Lis
         part(input).println()
     }
     println("Time: $duration")
-
 }
 
-
-data class Point(val x: Int, val y: Int): Comparable<Point> {
+data class Point(val x: Int, val y: Int) : Comparable<Point> {
     fun move(direction: Direction): Point {
         return Point(x + direction.x, y + direction.y)
     }
