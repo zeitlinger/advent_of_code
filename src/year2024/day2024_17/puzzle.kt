@@ -111,14 +111,17 @@ fun main() {
             mutableListOf())
         var registerA = 1
         while (true) {
-            val cpu = original.copy()
-            cpu.registerA = registerA
+            val cpu = original.copy(output = mutableListOf(), registerA = registerA)
             val output = execute(cpu)
+            if (registerA == 117440) {
+                println("Register A: $registerA")
+                println("Output: $output")
+            }
             if (output == want) {
                 println("Found: $registerA")
                 return@puzzle registerA
             }
-            if (registerA % 1000 == 0) {
+            if (registerA % 10000000 == 0) {
                 println("Register A: $registerA")
             }
             registerA++
