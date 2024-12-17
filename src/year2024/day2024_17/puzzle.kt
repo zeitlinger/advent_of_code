@@ -25,6 +25,7 @@ data class Cpu(
     var registerC: Long,
     val program: List<Int>,
     val output: MutableList<Long>,
+    var jumpCounter: Int = 0
 ) {
     private fun combo(): Long {
         val literal = literal()
@@ -81,6 +82,12 @@ data class Cpu(
                 if (registerA != 0L) {
                     instructionPointer = literal()
                     advance = false
+
+                    jumpCounter++
+                    if (jumpCounter > program.size) {
+                        println(this)
+                        throw IllegalStateException("Jump counter exceeded")
+                    }
                 }
             }
         }
@@ -95,6 +102,7 @@ data class Cpu(
 
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 fun main() {
     puzzle(117440) { lines ->
         val m = lines.associate {
@@ -110,20 +118,30 @@ fun main() {
             want,
             mutableListOf()
         )
-        val d = 2
-        val payload = d.xor(5)
-        val registerA = payload.or(3)
-        println("Register A: ${Integer.toBinaryString(registerA)}")
+//        for (mask in 0..7) {
+        var registerA = 0L
+        var mask = 4L
+        original.program.reversed().forEachIndexed { index, i ->
+            if (index > 0) {
+                registerA = registerA.shl(3)
+            }
+            registerA = registerA.or(i.toLong().xor(mask))
+            mask = mask.xor(5)
+        }
+
+        println("Register A: ${java.lang.Long.toBinaryString(registerA)} for mask $mask")
         val cpu = original.copy(output = mutableListOf(), registerA = registerA.toLong())
         val output = execute(cpu)
-//            if (registerA == 117440) {
-//                println("Register A: $registerA")
-//                println("Output: $output")
-//            }
+        //            if (registerA == 117440) {
+        //                println("Register A: $registerA")
+        //                println("Output: $output")
+        //            }
+        println(cpu)
         if (output == want) {
             println("Found: $registerA")
             return@puzzle registerA
         }
+//        }
 //            if (registerA % 10000000 == 0) {
 //                println("Register A: $registerA")
 //            }
