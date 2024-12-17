@@ -20,19 +20,19 @@ enum class Instruction {
 
 data class Cpu(
     var instructionPointer: Int,
-    var registerA: Int,
-    var registerB: Int,
-    var registerC: Int,
+    var registerA: Long,
+    var registerB: Long,
+    var registerC: Long,
     val program: List<Int>,
-    val output: MutableList<Int>,
+    val output: MutableList<Long>,
 ) {
-    private fun combo(): Int {
+    private fun combo(): Long {
         val literal = literal()
         if (literal < 0 || literal > 6) {
             throw IllegalArgumentException("Invalid combo")
         }
         if (literal < 4) {
-            return literal
+            return literal.toLong()
         }
         return when (literal) {
             4 -> registerA
@@ -62,7 +62,7 @@ data class Cpu(
             }
 
             Instruction.bxl -> {
-                registerB = registerB.xor(literal())
+                registerB = registerB.xor(literal().toLong())
             }
 
             Instruction.bxc -> {
@@ -74,11 +74,11 @@ data class Cpu(
             }
 
             Instruction.out -> {
-                output.add(combo().and(7))
+                output.add(combo().and(7L))
             }
 
             Instruction.jnz -> {
-                if (registerA != 0) {
+                if (registerA != 0L) {
                     instructionPointer = literal()
                     advance = false
                 }
@@ -89,8 +89,8 @@ data class Cpu(
         }
     }
 
-    private fun div(): Int {
-        return registerA.shr(combo())
+    private fun div(): Long {
+        return registerA.shr(combo().toInt())
     }
 
 }
@@ -104,33 +104,40 @@ fun main() {
         val want = m.getValue("Program").split(",").map { it.toInt() }
         val original = Cpu(
             0,
-            m.getValue("Register A").toInt(),
-            m.getValue("Register B").toInt(),
-            m.getValue("Register C").toInt(),
+            m.getValue("Register A").toLong(),
+            m.getValue("Register B").toLong(),
+            m.getValue("Register C").toLong(),
             want,
             mutableListOf())
-        var registerA = 1
+        var add = 1
+        var shift = 0
         while (true) {
+            val registerA = 2L.shl(shift) + add
             val cpu = original.copy(output = mutableListOf(), registerA = registerA)
             val output = execute(cpu)
-            if (registerA == 117440) {
-                println("Register A: $registerA")
-                println("Output: $output")
-            }
+//            if (registerA == 117440) {
+//                println("Register A: $registerA")
+//                println("Output: $output")
+//            }
             if (output == want) {
                 println("Found: $registerA")
                 return@puzzle registerA
             }
-            if (registerA % 10000000 == 0) {
-                println("Register A: $registerA")
+//            if (registerA % 10000000 == 0) {
+//                println("Register A: $registerA")
+//            }
+            add++
+            if (add == 0xFF) {
+                add = 0
+                shift += 1
+                println("Shift: $shift")
             }
-            registerA++
         }
         throw IllegalStateException("No solution found")
     }
 }
 
-private fun execute(cpu: Cpu): List<Int> {
+private fun execute(cpu: Cpu): List<Long> {
     while (cpu.instructionPointer < cpu.program.size) {
         val instruction = Instruction.of(cpu.program[cpu.instructionPointer])
         cpu.execute(instruction)
