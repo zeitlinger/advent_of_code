@@ -1,7 +1,6 @@
 package year2024.day2024_17
 
-import stringPuzzle
-import kotlin.math.pow
+import puzzle
 
 enum class Instruction {
     adv,
@@ -71,11 +70,11 @@ data class Cpu(
             }
 
             Instruction.bst -> {
-                registerB = combo().mod(8)
+                registerB = combo().and(7)
             }
 
             Instruction.out -> {
-                output.add(combo().mod(8))
+                output.add(combo().and(7))
             }
 
             Instruction.jnz -> {
@@ -91,31 +90,47 @@ data class Cpu(
     }
 
     private fun div(): Int {
-        val numerator = registerA
-        val denominator = 2.0.pow(combo())
-        val i = (numerator / denominator).toInt()
-        return i
+        return registerA.shr(combo())
     }
 
 }
 
 fun main() {
-    stringPuzzle("4,6,3,5,6,3,5,2,1,0") { lines ->
+    puzzle(117440) { lines ->
         val m = lines.associate {
             val s = it.split(":")
             s[0] to s[1].trim()
         }
-        val cpu = Cpu(
+        val want = m.getValue("Program").split(",").map { it.toInt() }
+        val original = Cpu(
             0,
             m.getValue("Register A").toInt(),
             m.getValue("Register B").toInt(),
             m.getValue("Register C").toInt(),
-            m.getValue("Program").split(",").map { it.toInt() },
+            want,
             mutableListOf())
-        while (cpu.instructionPointer < cpu.program.size) {
-            val instruction = Instruction.of(cpu.program[cpu.instructionPointer])
-            cpu.execute(instruction)
+        var registerA = 1
+        while (true) {
+            val cpu = original.copy()
+            cpu.registerA = registerA
+            val output = execute(cpu)
+            if (output == want) {
+                println("Found: $registerA")
+                return@puzzle registerA
+            }
+            if (registerA % 1000 == 0) {
+                println("Register A: $registerA")
+            }
+            registerA++
         }
-        cpu.output.joinToString(",")
+        throw IllegalStateException("No solution found")
     }
+}
+
+private fun execute(cpu: Cpu): List<Int> {
+    while (cpu.instructionPointer < cpu.program.size) {
+        val instruction = Instruction.of(cpu.program[cpu.instructionPointer])
+        cpu.execute(instruction)
+    }
+    return cpu.output
 }
