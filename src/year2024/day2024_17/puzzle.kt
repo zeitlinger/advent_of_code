@@ -108,31 +108,25 @@ fun main() {
             m.getValue("Register B").toLong(),
             m.getValue("Register C").toLong(),
             want,
-            mutableListOf())
-        var add = 1
-        var shift = 0
-        while (true) {
-            val registerA = 2L.shl(shift) + add
-            val cpu = original.copy(output = mutableListOf(), registerA = registerA)
-            val output = execute(cpu)
+            mutableListOf()
+        )
+        val d = 2
+        val payload = d.xor(5).xor(6).shl(3)
+        val registerA = payload.or(1)
+        println("Register A: ${Integer.toBinaryString(registerA)}")
+        val cpu = original.copy(output = mutableListOf(), registerA = registerA.toLong())
+        val output = execute(cpu)
 //            if (registerA == 117440) {
 //                println("Register A: $registerA")
 //                println("Output: $output")
 //            }
-            if (output == want) {
-                println("Found: $registerA")
-                return@puzzle registerA
-            }
+        if (output == want) {
+            println("Found: $registerA")
+            return@puzzle registerA
+        }
 //            if (registerA % 10000000 == 0) {
 //                println("Register A: $registerA")
 //            }
-            add++
-            if (add == 0xFF) {
-                add = 0
-                shift += 1
-                println("Shift: $shift")
-            }
-        }
         throw IllegalStateException("No solution found")
     }
 }
