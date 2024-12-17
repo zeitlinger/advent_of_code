@@ -111,8 +111,8 @@ fun main() {
             mutableListOf()
         )
         val d = 2
-        val payload = d.xor(5).xor(6).shl(3)
-        val registerA = payload.or(1)
+        val payload = d.xor(5)
+        val registerA = payload.or(3)
         println("Register A: ${Integer.toBinaryString(registerA)}")
         val cpu = original.copy(output = mutableListOf(), registerA = registerA.toLong())
         val output = execute(cpu)
