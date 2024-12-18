@@ -26,16 +26,25 @@ fun check(got: String, expected: String) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
-fun <N : Number> puzzle(expected: N?, keepEmptyRows: Boolean = false, part: (List<String>) -> N) {
-    stringPuzzle(expected?.toString(), keepEmptyRows, skip = 3) { lines -> part(lines).toString() }
+fun <N : Number> puzzle(
+    expected: N?,
+    keepEmptyRows: Boolean = false,
+    runTest: Boolean = true,
+    part: (List<String>) -> N) {
+    stringPuzzle(expected?.toString(), keepEmptyRows, runTest, skip = 3) { lines -> part(lines).toString() }
 }
 
-fun stringPuzzle(expected: String?, keepEmptyRows: Boolean = false, skip: Long = 2, part: (List<String>) -> String) {
+fun stringPuzzle(
+    expected: String?,
+    keepEmptyRows: Boolean = false,
+    runTest: Boolean = true,
+    skip: Long = 2,
+    part: (List<String>) -> String) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(skip).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
-    if (expected != null) {
+    if (expected != null && runTest) {
         check(part(readInput(day, "test.txt", keepEmptyRows)), expected)
     }
 
