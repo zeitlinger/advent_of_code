@@ -118,18 +118,24 @@ fun main() {
             want,
             mutableListOf()
         )
+//        var currentMask = 4L
 //        for (mask in 0..7) {
         var registerA = 0L
-        var mask = 4L
-        original.program.reversed().forEachIndexed { index, i ->
+        val program = original.program
+        val reversed = program.reversed()
+        reversed.forEachIndexed { index, i ->
             if (index > 0) {
+//                    registerA = registerA.xor(5)
                 registerA = registerA.shl(3)
             }
-            registerA = registerA.or(i.toLong().xor(mask))
-            mask = mask.xor(5)
+
+            val last = if (index == 0) 0 else reversed[index - 1].toLong()
+            val shift = i.toLong().xor(3)
+            val l = shift.xor(last).xor(5)
+            registerA = registerA.or(l)
         }
 
-        println("Register A: ${java.lang.Long.toBinaryString(registerA)} for mask $mask")
+        println("Register A: ${java.lang.Long.toBinaryString(registerA)}")
         val cpu = original.copy(output = mutableListOf(), registerA = registerA.toLong())
         val output = execute(cpu)
         //            if (registerA == 117440) {
@@ -140,8 +146,8 @@ fun main() {
         if (output == want) {
             println("Found: $registerA")
             return@puzzle registerA
+//            }
         }
-//        }
 //            if (registerA % 10000000 == 0) {
 //                println("Register A: $registerA")
 //            }
