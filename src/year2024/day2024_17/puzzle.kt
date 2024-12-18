@@ -123,8 +123,11 @@ fun main() {
 //        for (mask in 0..7) {
         val registerA = nextDigit(0, original, original.program.size - 1)
         //            if (registerA == 117440) {
-        println("Register A: $registerA")
-        println("Register A: ${registerA.binary()}")
+        if (registerA != null) {
+            println("Register A: $registerA")
+            println("Register A: ${registerA.binary()}")
+            return@puzzle registerA
+        }
         //                println("Output: $output")
         //            }
 
@@ -141,7 +144,7 @@ private fun nextDigit(
     lastRegisterA: Long,
     original: Cpu,
     i: Int
-): Long {
+): Long? {
     for (current in 0..7) {
 //        var registerA1 = registerA
 //        val reversed = program.reversed()
@@ -167,10 +170,13 @@ private fun nextDigit(
             if (i == 0) {
                 return registerA
             }
-            return nextDigit(registerA, original, i - 1)
+            val nextDigit = nextDigit(registerA, original, i - 1)
+            if (nextDigit != null) {
+                return nextDigit
+            }
         }
     }
-    throw IllegalStateException("No solution found")
+    return null
 }
 
 private fun execute(cpu: Cpu): List<Int> {
