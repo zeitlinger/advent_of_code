@@ -24,7 +24,7 @@ data class Cpu(
     var registerB: Long,
     var registerC: Long,
     val program: List<Int>,
-    val output: MutableList<Long>,
+    val output: MutableList<Int>,
     var jumpCounter: Int = 0
 ) {
     private fun combo(): Long {
@@ -75,7 +75,7 @@ data class Cpu(
             }
 
             Instruction.out -> {
-                output.add(combo().and(7L))
+                output.add(combo().and(7L).toInt())
             }
 
             Instruction.jnz -> {
@@ -91,6 +91,7 @@ data class Cpu(
                 }
             }
         }
+        println("${instruction.name}: combo=${combo()} a=${registerA.binary()} b=${registerB.binary()} c=${registerC.binary()}")
         if (advance) {
             instructionPointer += 2
         }
@@ -120,34 +121,13 @@ fun main() {
         )
 //        var currentMask = 4L
 //        for (mask in 0..7) {
-        var registerA = 0L
-        val program = original.program
-        val reversed = program.reversed()
-        reversed.forEachIndexed { index, i ->
-            if (index > 0) {
-//                    registerA = registerA.xor(5)
-                registerA = registerA.shl(3)
-            }
-
-            val last = if (index == 0) 0 else reversed[index - 1].toLong()
-            val shift = i.toLong().xor(3)
-            val l = shift.xor(last).xor(5)
-            registerA = registerA.or(l)
-        }
-
-        println("Register A: ${java.lang.Long.toBinaryString(registerA)}")
-        val cpu = original.copy(output = mutableListOf(), registerA = registerA.toLong())
-        val output = execute(cpu)
+        val registerA = nextDigit(0, original, original.program.size - 1)
         //            if (registerA == 117440) {
-        //                println("Register A: $registerA")
+        println("Register A: $registerA")
+        println("Register A: ${registerA.binary()}")
         //                println("Output: $output")
         //            }
-        println(cpu)
-        if (output == want) {
-            println("Found: $registerA")
-            return@puzzle registerA
-//            }
-        }
+
 //            if (registerA % 10000000 == 0) {
 //                println("Register A: $registerA")
 //            }
@@ -155,7 +135,45 @@ fun main() {
     }
 }
 
-private fun execute(cpu: Cpu): List<Long> {
+private fun Long.binary(): String = java.lang.Long.toBinaryString(this)
+
+private fun nextDigit(
+    lastRegisterA: Long,
+    original: Cpu,
+    i: Int
+): Long {
+    for (current in 0..7) {
+//        var registerA1 = registerA
+//        val reversed = program.reversed()
+//        reversed.forEachIndexed { index, i ->
+//            if (index > 0) {
+//                    registerA = registerA.xor(5)
+        val registerA = lastRegisterA.shl(3).or(current.toLong())
+//            }
+
+//            val last = if (index == 0) 0 else reversed[index - 1].toLong()
+//            val shift = i.toLong().xor(3)
+//            val l = shift.xor(last).xor(5)
+//            registerA1 = registerA1.or(l)
+
+//        println("Register A: ${java.lang.Long.toBinaryString(registerA1)}")
+        val cpu = original.copy(output = mutableListOf(), registerA = registerA)
+        println("Try: ${registerA.binary()}")
+        println(cpu)
+        val output = execute(cpu)
+        val want = original.program[i]
+        if (output.first() == want) {
+            println("Found: ${registerA.binary()}")
+            if (i == 0) {
+                return registerA
+            }
+            return nextDigit(registerA, original, i - 1)
+        }
+    }
+    throw IllegalStateException("No solution found")
+}
+
+private fun execute(cpu: Cpu): List<Int> {
     while (cpu.instructionPointer < cpu.program.size) {
         val instruction = Instruction.of(cpu.program[cpu.instructionPointer])
         cpu.execute(instruction)
