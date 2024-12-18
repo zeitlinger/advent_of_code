@@ -35,9 +35,9 @@ fun stringPuzzle(expected: String?, keepEmptyRows: Boolean = false, skip: Long =
         val caller = stack.skip(skip).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
-//    if (expected != null) {
-//        check(part(readInput(day, "test.txt", keepEmptyRows)), expected)
-//    }
+    if (expected != null) {
+        check(part(readInput(day, "test.txt", keepEmptyRows)), expected)
+    }
 
     val duration = measureTime {
         val input = readInput(day, "input.txt", keepEmptyRows)
