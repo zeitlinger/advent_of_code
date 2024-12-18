@@ -26,12 +26,15 @@ fun check(got: String, expected: String) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
+data class PuzzleRun(val lines: List<String>, val test: Boolean)
+
 fun <N : Number> puzzle(
     expected: N?,
     keepEmptyRows: Boolean = false,
     runTest: Boolean = true,
-    part: (List<String>) -> N) {
-    stringPuzzle(expected?.toString(), keepEmptyRows, runTest, skip = 3) { lines -> part(lines).toString() }
+    part: (List<String>) -> N
+) {
+    stringPuzzle(expected?.toString(), keepEmptyRows, runTest, skip = 3) { run -> part(run.lines).toString() }
 }
 
 fun stringPuzzle(
@@ -39,18 +42,20 @@ fun stringPuzzle(
     keepEmptyRows: Boolean = false,
     runTest: Boolean = true,
     skip: Long = 2,
-    part: (List<String>) -> String) {
+    part: (PuzzleRun) -> String
+) {
     val day = StackWalker.getInstance().walk { stack ->
         val caller = stack.skip(skip).findFirst().get()
         caller.className.split(".").take(2).joinToString("/")
     }
     if (expected != null && runTest) {
-        check(part(readInput(day, "test.txt", keepEmptyRows)), expected)
+        val input = readInput(day, "test.txt", keepEmptyRows)
+        check(part(PuzzleRun(input, true)), expected)
     }
 
     val duration = measureTime {
         val input = readInput(day, "input.txt", keepEmptyRows)
-        part(input).println()
+        part(PuzzleRun(input, false)).println()
     }
     println("Time: $duration")
 }
@@ -111,4 +116,33 @@ enum class Direction(val x: Int, val y: Int, val symbol: Char) {
     }
 }
 
+fun bisectSmallest(range: LongRange, predicate: (Long) -> Boolean): Long {
+    var left = range.first
+    var right = range.last
+    while (left < right) {
+        val mid = left + (right - left) / 2
+        if (predicate(mid)) {
+            right = mid
+        } else {
+            left = mid + 1
+        }
+    }
+    return left
+}
+
+fun bisectLargest(range: LongRange, predicate: (Long) -> Boolean): Long {
+    var left = range.first
+    var right = range.last
+    while (left < right) {
+        val mid = left + (right - left + 1) / 2
+        val b = predicate(mid)
+        println("Bisect $left = $b")
+        if (b) {
+            left = mid
+        } else {
+            right = mid - 1
+        }
+    }
+    return left
+}
 

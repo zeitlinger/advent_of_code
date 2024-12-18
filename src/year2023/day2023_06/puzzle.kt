@@ -1,36 +1,10 @@
 package year2023.day2023_06
 
+import bisectLargest
+import bisectSmallest
 import puzzle
 
 data class RecordRace(val time: Long, val distance: Long)
-
-fun bisectSmallest(range: LongRange, predicate: (Long) -> Boolean): Long {
-    var left = range.first
-    var right = range.last
-    while (left < right) {
-        val mid = left + (right - left) / 2
-        if (predicate(mid)) {
-            right = mid
-        } else {
-            left = mid + 1
-        }
-    }
-    return left
-}
-
-fun bisectLargest(range: LongRange, predicate: (Long) -> Boolean): Long {
-    var left = range.first
-    var right = range.last
-    while (left < right) {
-        val mid = left + (right - left + 1) / 2
-        if (predicate(mid)) {
-            left = mid
-        } else {
-            right = mid - 1
-        }
-    }
-    return left
-}
 
 fun waysToBeat(recordRace: RecordRace): Long {
     val predicate: (Long) -> Boolean = { chargeTime ->
