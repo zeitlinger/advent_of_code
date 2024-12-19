@@ -24,32 +24,31 @@ data class Trie(val children: MutableMap<Char, Trie> = mutableMapOf(), var isWor
     }
 }
 
-data class Onsen(val root: Trie, val cache: MutableMap<String, Boolean> = mutableMapOf())
+data class Onsen(val root: Trie, val cache: MutableMap<String, Long> = mutableMapOf())
 
-fun find(trie: Trie, word: String, found: List<String>, onsen: Onsen): Boolean {
+fun find(trie: Trie, word: String, found: List<String>, onsen: Onsen): Long {
     if (word in onsen.cache) {
         return onsen.cache[word]!!
     }
-    trie.findAllSubstrings(word).forEach {
+    val choices = trie.findAllSubstrings(word).sumOf {
         val substring = word.substring(it)
         if (substring.isEmpty()) {
             val found = found + word
             println("Found: $found")
-            return true
-        }
-        if (find(trie, substring, found + word.substring(0, it), onsen)) {
-            return true
+            1L
+        } else {
+            find(trie, substring, found + word.substring(0, it), onsen)
         }
     }
-    onsen.cache[word] = false
-    return false
+    onsen.cache[word] = choices
+    return choices
 }
 
 fun main() {
-    puzzle(6) { lines ->
+    puzzle(16) { lines ->
         val trie = Trie()
         val onsen = Onsen(trie)
         lines[0].split(", ").forEach { trie.add(it) }
-        lines.drop(1).count { find(trie, it, emptyList(), onsen) }
+        lines.drop(1).sumOf { find(trie, it, emptyList(), onsen) }
     }
 }
