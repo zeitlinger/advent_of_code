@@ -71,6 +71,8 @@ data class Point(val x: Int, val y: Int) : Comparable<Point> {
     }
 }
 
+data class Visit(val point: Point, val direction: Direction)
+
 enum class Direction(val x: Int, val y: Int, val symbol: Char) {
     UP(0, -1, '^'),
     DOWN(0, 1, 'v'),

@@ -2,6 +2,7 @@ package year2023.day2023_16
 
 import Direction
 import Point
+import Visit
 import puzzle
 
 //Upon closer inspection, the contraption appears to be a flat, two-dimensional square grid containing empty space (.), mirrors (/ and \), and splitters (| and -).
@@ -53,46 +54,34 @@ enum class Content(val symbol: Char) {
 
 data class Tile(
     val content: Content,
-    var energizedVertical: Boolean = false,
-    var energizedHorizontal: Boolean = false
+    var energized: MutableSet<Direction> = mutableSetOf()
 ) {
     fun energize(direction: Direction): Boolean {
-        when (direction) {
-            Direction.UP, Direction.DOWN -> {
-                if (energizedVertical) {
-                    return false
-                }
-                energizedVertical = true
-            }
-
-            Direction.LEFT, Direction.RIGHT -> {
-                if (energizedHorizontal) {
-                    return false
-                }
-                energizedHorizontal = true
-            }
-        }
-        return true
+        return energized.add(direction)
     }
 
     fun isEnergized(): Boolean {
-        return energizedVertical || energizedHorizontal
+        return energized.isNotEmpty()
     }
 }
 
 data class Field(val tiles: MutableList<MutableList<Tile>>) {
-    fun energy(point: Point, direction: Direction) {
+    fun energy(visit: Visit): List<Visit> {
+        val point = visit.point
+        val direction = visit.direction
         val tile = tiles[point.y][point.x]
         if (!tile.energize(direction)) {
-            return
+            return emptyList()
         }
         val output = tile.content.output(direction)
-        println("Energizing $point $direction ${tile.content} -> $output")
-        print()
-        output.forEach { outputDirection ->
+//        println("Energizing $point $direction ${tile.content} -> $output")
+//        print()
+        return output.mapNotNull { outputDirection ->
             val nextPoint = point.move(outputDirection)
             if (nextPoint.x in tiles[0].indices && nextPoint.y in tiles.indices) {
-                energy(nextPoint, outputDirection)
+                Visit(nextPoint, outputDirection)
+            } else {
+                null
             }
         }
     }
@@ -112,7 +101,13 @@ fun main() {
                 Tile(Content.of(c))
             }.toMutableList()
         }.toMutableList())
-        field.energy(Point(0, 0), Direction.RIGHT)
-        0
+        val open = mutableSetOf(Visit(Point(0, 0), Direction.RIGHT))
+        while (open.isNotEmpty()) {
+            val visit = open.first()
+            open.remove(visit)
+            val nextVisits = field.energy(visit)
+            open.addAll(nextVisits)
+        }
+        field.tiles.sumOf { row -> row.count { it.isEnergized() } }
     }
 }
