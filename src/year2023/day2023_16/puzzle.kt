@@ -86,6 +86,10 @@ data class Field(val tiles: MutableList<MutableList<Tile>>) {
         }
     }
 
+    fun copy(): Field {
+        return Field(tiles.map { it.map { it.copy(energized = mutableSetOf()) }.toMutableList() }.toMutableList())
+    }
+
     fun print() {
         tiles.forEach { row ->
             println(row.joinToString("") { if (it.isEnergized()) "#" else " " })
@@ -95,19 +99,33 @@ data class Field(val tiles: MutableList<MutableList<Tile>>) {
 
 
 fun main() {
-    puzzle(46) { lines ->
+    puzzle(51) { lines ->
         val field = Field(lines.map { row ->
             row.map { c ->
                 Tile(Content.of(c))
             }.toMutableList()
         }.toMutableList())
-        val open = mutableSetOf(Visit(Point(0, 0), Direction.RIGHT))
-        while (open.isNotEmpty()) {
-            val visit = open.first()
-            open.remove(visit)
-            val nextVisits = field.energy(visit)
-            open.addAll(nextVisits)
-        }
-        field.tiles.sumOf { row -> row.count { it.isEnergized() } }
+        val start = Visit(Point(0, 0), Direction.RIGHT)
+        val row = field.tiles[0]
+        val top = row.indices.map { Visit(Point(it, 0), Direction.DOWN) }
+        val bottom = row.indices.map { Visit(Point(it, field.tiles.size - 1), Direction.UP) }
+        val left = field.tiles.indices.map { Visit(Point(0, it), Direction.RIGHT) }
+        val right = field.tiles.indices.map { Visit(Point(row.size - 1, it), Direction.LEFT) }
+        val all = listOf(top, bottom, left, right).flatten()
+        all.maxOf { energize(it, field.copy()) }
     }
+}
+
+private fun energize(start: Visit, field: Field): Int {
+    val open = mutableSetOf(start)
+    while (open.isNotEmpty()) {
+        val visit = open.first()
+        open.remove(visit)
+        val nextVisits = field.energy(visit)
+        open.addAll(nextVisits)
+    }
+    val sumOf = field.tiles.sumOf { row -> row.count { it.isEnergized() } }
+    println("start $start result $sumOf")
+    field.print()
+    return sumOf
 }
