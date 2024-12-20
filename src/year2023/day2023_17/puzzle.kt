@@ -122,6 +122,22 @@ fun main() {
 
         val (path, cost) = aStarSearch(Point(0, 0), Point(7, 7), SquareGrid(8, 8, barriers))
 
+        val blocked = barriers.flatten()
+        for (y in 0..7) {
+            for (x in 0..7) {
+                val point = Point(x, y)
+                when (point) {
+                    in blocked -> {
+                        print('#')
+                    }
+                    in path -> {
+                        print('x')
+                    }
+                    else -> print('.')
+                }
+            }
+            println()
+        }
 
         println("Cost: $cost  Path: $path")
         0
