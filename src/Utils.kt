@@ -69,6 +69,24 @@ data class Point(val x: Int, val y: Int) : Comparable<Point> {
             else -> 0
         }
     }
+
+    fun directionTo(point: Point) {
+        val dx = point.x - x
+        val dy = point.y - y
+        if (dx == 0) {
+            if (dy > 0) {
+                Direction.DOWN
+            } else {
+                Direction.UP
+            }
+        } else {
+            if (dx > 0) {
+                Direction.RIGHT
+            } else {
+                Direction.LEFT
+            }
+        }
+    }
 }
 
 data class Visit(val point: Point, val direction: Direction)

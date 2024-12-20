@@ -1,5 +1,6 @@
 package year2023.day2023_17
 
+import Direction
 import Point
 import puzzle
 
@@ -9,7 +10,7 @@ typealias Barrier = Set<Point>
 
 const val MAX_SCORE = 99999999
 
-abstract class Grid(private val barriers: List<Barrier>) {
+abstract class Grid(private val cost: List<List<Int>>) {
 
     open fun heuristicDistance(start: Point, finish: Point): Int {
         val dx = abs(start.x - finish.x)
@@ -17,30 +18,27 @@ abstract class Grid(private val barriers: List<Barrier>) {
         return (dx + dy) + (-2) * minOf(dx, dy)
     }
 
-    fun inBarrier(position: Point) = barriers.any { it.contains(position) }
+    abstract fun getNeighbours(position: Point, path: List<Point>): List<Point>
 
-    abstract fun getNeighbours(position: Point): List<Point>
-
-    open fun moveCost(from: Point, to: Point) = if (inBarrier(to)) MAX_SCORE else 1
+    open fun moveCost(from: Point, to: Point) = cost[to.y][to.x]
 }
 
-class SquareGrid(width: Int, height: Int, barriers: List<Barrier>) : Grid(barriers) {
+class SquareGrid(width: Int, height: Int, cost: List<List<Int>>) : Grid(cost) {
     private val heightRange: IntRange = (0 until height)
     private val widthRange: IntRange = (0 until width)
 
-    private val validMoves = listOf(
-        Point(1, 0),
-        Point(-1, 0),
-        Point(0, 1),
-        Point(0, -1),
-        Point(1, 1),
-        Point(-1, 1),
-        Point(1, -1),
-        Point(-1, -1)
-    )
-
-    override fun getNeighbours(position: Point): List<Point> = validMoves
-        .map { Point(position.x + it.x, position.y + it.y) }
+    override fun getNeighbours(position: Point, path: List<Point>): List<Point> = Direction.entries
+        .mapNotNull {
+            if (path.size > 3) {
+                val list = path.subList(path.size - 3, path.size).windowed(2).map {
+                    it[0].directionTo(it[1])
+                }
+                if (list.all { it == list[0] }) {
+                    return@mapNotNull null
+                }
+            }
+            position.move(it)
+        }
         .filter { inGrid(it) }
 
     private fun inGrid(it: Point) = (it.x in widthRange) && (it.y in heightRange)
@@ -81,10 +79,11 @@ fun aStarSearch(start: Point, finish: Point, grid: Grid): Pair<List<Point>, Int>
 
         val currentPos = openVertices.minBy { estimatedTotalCost.getValue(it) }
 
+        val path = generatePath(currentPos, cameFrom)
+
         // Check if we have reached the finish
         if (currentPos == finish) {
             // Backtrack to generate the most efficient path
-            val path = generatePath(currentPos, cameFrom)
             return Pair(path, estimatedTotalCost.getValue(finish)) // First Route to finish will be optimum route
         }
 
@@ -92,7 +91,7 @@ fun aStarSearch(start: Point, finish: Point, grid: Grid): Pair<List<Point>, Int>
         openVertices.remove(currentPos)
         closedVertices.add(currentPos)
 
-        grid.getNeighbours(currentPos)
+        grid.getNeighbours(currentPos, path)
             .filterNot { closedVertices.contains(it) }  // Exclude previous visited vertices
             .forEach { neighbour ->
                 val score = costFromStart.getValue(currentPos) + grid.moveCost(currentPos, neighbour)
@@ -113,23 +112,17 @@ fun aStarSearch(start: Point, finish: Point, grid: Grid): Pair<List<Point>, Int>
 
 fun main() {
     puzzle(102) { lines ->
-        val barriers = listOf(
-            setOf(
-                Point(2, 4), Point(2, 5), Point(2, 6), Point(3, 6), Point(4, 6), Point(5, 6), Point(5, 5),
-                Point(5, 4), Point(5, 3), Point(5, 2), Point(4, 2), Point(3, 2)
-            )
-        )
+        val costMap = lines.map { it.map { it.digitToInt() } }
 
-        val (path, cost) = aStarSearch(Point(0, 0), Point(7, 7), SquareGrid(8, 8, barriers))
+        val (path, cost) = aStarSearch(Point(0, 0), Point(7, 7), SquareGrid(8, 8, costMap))
 
-        val blocked = barriers.flatten()
         for (y in 0..7) {
             for (x in 0..7) {
                 val point = Point(x, y)
                 when (point) {
-                    in blocked -> {
-                        print('#')
-                    }
+//                    in blocked -> {
+//                        print('#')
+//                    }
                     in path -> {
                         print('x')
                     }
@@ -140,6 +133,6 @@ fun main() {
         }
 
         println("Cost: $cost  Path: $path")
-        0
+        cost
     }
 }
