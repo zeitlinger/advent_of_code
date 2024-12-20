@@ -13,7 +13,7 @@ abstract class Grid(private val cost: List<List<Int>>) {
     open fun heuristicDistance(start: Point, finish: Point): Int {
         val dx = abs(start.x - finish.x)
         val dy = abs(start.y - finish.y)
-        return (dx + dy) * 100 + (-2) * minOf(dx, dy)
+        return (dx + dy) + (-2) * minOf(dx, dy)
     }
 
     abstract fun getNeighbours(position: Point, path: List<Point>): List<Point>
