@@ -17,11 +17,6 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
     .toString(16)
     .padStart(32, '0')
 
-/**
- * The cleaner shorthand for printing output.
- */
-fun Any?.println() = println(this)
-
 fun check(got: String, expected: String) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
@@ -55,7 +50,7 @@ fun stringPuzzle(
 
     val duration = measureTime {
         val input = readInput(day, "input.txt", keepEmptyRows)
-        part(PuzzleRun(input, false)).println()
+        println(part(PuzzleRun(input, false)))
     }
     println("Time: $duration")
 }
