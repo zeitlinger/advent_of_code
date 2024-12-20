@@ -70,10 +70,10 @@ data class Point(val x: Int, val y: Int) : Comparable<Point> {
         }
     }
 
-    fun directionTo(point: Point) {
+    fun directionTo(point: Point): Direction {
         val dx = point.x - x
         val dy = point.y - y
-        if (dx == 0) {
+        return if (dx == 0) {
             if (dy > 0) {
                 Direction.DOWN
             } else {
