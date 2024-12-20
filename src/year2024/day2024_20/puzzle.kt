@@ -80,22 +80,24 @@ fun main() {
             .distinct()
             .mapIndexed { index, point -> point to index }.toMap()
         trackPositions.entries.map { e ->
-            Direction.entries.map { direction ->
-                val p = e.key
-                val wall = p.move(direction)
-                val t = wall.move(direction)
-                val pos = trackPositions[t]
-                if (pos != null && maze.tile(wall) == Tile.WALL) {
-                    val gain = (pos - e.value).absoluteValue - 2
-                    cheats.add(Cheat(setOf(p, t), gain)
-//                        .also { it.print(maze) }
-                    )
+            trackPositions
+                .filter { o -> o.value > e.value && distance(e.key, o.key) <= 20 }
+                .forEach { o ->
+                    val gain = o.value - e.value - distance(e.key, o.key)
+                    cheats.add(Cheat(setOf(e.key, o.key), gain))
                 }
-            }
         }
-//        println(cheats.sortedBy { it.gain }.groupBy { it.gain }.mapValues { it.value.size })
+//        println(
+//            cheats
+//            .filter { it.gain >= 50 }
+//            .sortedBy { it.gain }.groupBy { it.gain }.mapValues { it.value.size })
+//        throw IllegalStateException("Done")
         cheats.count { it.gain >= 100 }
     }
+}
+
+fun distance(p1: Point, p2: Point): Int {
+    return (p1.x - p2.x).absoluteValue + (p1.y - p2.y).absoluteValue
 }
 
 private fun runGame(game: Game): List<Visit> {
