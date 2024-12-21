@@ -3,7 +3,6 @@ package year2024.day2024_21
 import Direction
 import Point
 import puzzle
-import java.util.concurrent.Future
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
@@ -65,10 +64,20 @@ fun sequenceLength(code: String): String {
     return current.minBy { it.length }
 }
 
-data class Move(val code: String, val location: Point, var result: List<String> = emptyList()) {
+data class Move(
+    val code: String,
+    val location: Point,
+    val cache: MutableMap<String, List<String>>,
+    var result: (() -> List<String>)? = null
+) {
     fun get(): List<String> {
-        // todo
-        return onComplete(emptyList())
+        cache[code]?.let { return it }
+        if (result == null) {
+            throw IllegalArgumentException("Result not set")
+        }
+        val r = result!!.invoke()
+        cache[code] = r
+        return r
     }
 }
 
@@ -76,32 +85,26 @@ fun keypadMoves(
     code: String,
     keypad: Keypad,
     start: Point = keypad.start(),
-    cache: MutableMap<String, List<String>> = mutableMapOf()
 ): List<String> {
+    val cache = mutableMapOf<String, List<String>>()
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
-    var result = emptyList<String>()
-    val elements = Move(code, start) {
-        result = it
-        it
-    }
-    val open = mutableListOf(elements)
+    val m = Move(code, start, cache)
+    val open = mutableListOf(m)
     while (open.isNotEmpty()) {
         val move = open.removeLast()
-        val moves = cache.getOrPut(code) {
-            movesNoCache(move.code, keypad, move.location, open)
-            move.onComplete(emptyList())
-        }
+        move.result = moves(move.code, keypad, move.location, open, cache)
     }
-    return result
+    return m.get()
 }
 
-private fun movesNoCache(
+private fun moves(
     code: String,
     keypad: Keypad,
     start: Point,
-    open: MutableList<Move>
+    open: MutableList<Move>,
+    cache: MutableMap<String, List<String>>
 ): () -> List<String> {
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
@@ -110,14 +113,14 @@ private fun movesNoCache(
         return { moves }
     }
 
-    val move = Move(code.drop(1), location)
-    val promises: List<Move> = moves.map { m ->
-        open.add(move)
-        move
-    }
+    val next = Move(code.drop(1), location, cache)
+    open.add(next)
 
     return {
-        val all = promises.flatMap { it.get() }
+        val n = next.get()
+        val all = moves.flatMap { m ->
+            n.flatMap { listOf(m + it) }
+        }
         if (keypad == robotKeypad) {
             listOf(all.minBy { it.length })
         } else {
