@@ -51,9 +51,9 @@ fun main() {
 }
 
 fun sequenceLength(code: String): String {
-    var current = keypadMoves(code, numericKeypad)
-    (0 until 2).forEach { _ ->
-        current = current.flatMap { keypadMoves(it, robotKeypad) }
+    var current = keypadMoves(code, numericKeypad, "numeric")
+    (0 until 25).forEach { i ->
+        current = current.flatMap { keypadMoves(it, robotKeypad, "robot $i") }
     }
 //    println("depressurized: $depressurized: ${depressurized}")
 //    println("radiation: $radiation: ${radiation}")
@@ -68,24 +68,42 @@ data class Move(
     val code: String,
     val location: Point,
     val cache: MutableMap<String, List<String>>,
-    val ready: () -> Unit
-)
+    var ready: Boolean = false,
+    var notified: Boolean = false,
+    val callback: () -> Unit,
+) {
+    fun ready() {
+        ready = true
+    }
+    fun call() {
+        if (ready && !notified) {
+            callback()
+            notified = true
+        }
+    }
+}
 
 fun keypadMoves(
     code: String,
     keypad: Keypad,
+    name: String,
     start: Point = keypad.start(),
 ): List<String> {
     val cache = mutableMapOf<String, List<String>>()
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
-    val m = Move(code, start, cache) {}
+    val m = Move(code, start, cache) {
+        cache[code] = listOf(code)
+    }
     val open = mutableListOf(m)
+    val closed = mutableListOf<Move>()
     while (open.isNotEmpty()) {
         val move = open.removeLast()
         moves(keypad, open, cache, move)
+        closed.add(move)
     }
+    closed.reversed().forEach { it.call() }
     return cache[code]!!
 }
 
