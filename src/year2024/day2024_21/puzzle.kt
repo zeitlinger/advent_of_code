@@ -37,17 +37,30 @@ val robotKeypad = Keypad(
     )
 )
 
+data class RobotKeyCache(private val cache: MutableMap<Point, MutableMap<String, Pair<String, Point>>>) {
+    // todo only need length
+    fun get(from: Point, codePart: String): Pair<String, Point>? {
+        return cache[from]?.get(codePart)
+    }
+
+    fun put(from: Point, to: Point, input: String, output: String) {
+        cache.getOrPut(from) { mutableMapOf() }[input] = output to to
+    }
+}
+
 fun main() {
 //    sequenceLength("1")
     puzzle(126384) { lines ->
         lines.sumOf { code ->
-            val robotKeypadCache = mutableMapOf<String, String>()
+            val robotKeypadCache = RobotKeyCache(mutableMapOf())
             // warm up cache
-            robotKeypad.locations.keys.forEach { key ->
-                val keyLocation = robotKeypad.locations[key] ?: throw IllegalArgumentException("Invalid key")
-                val toKey = moves(robotKeypad.start(), keyLocation, robotKeypad).first()
-                val back = moves(keyLocation, robotKeypad.start(), robotKeypad).first()
-                robotKeypadCache[key.toString()] = toKey + back
+            robotKeypad.locations.entries.forEach { e ->
+                robotKeypad.locations.values.forEach { from ->
+                    val key = e.key
+                    val to = e.value
+                    val toKey = moves(from, to, robotKeypad).first()
+                    robotKeypadCache.put(from, to, key.toString(), toKey)
+                }
             }
 
             val s = sequenceLength(code, robotKeypadCache)
@@ -60,7 +73,7 @@ fun main() {
     }
 }
 
-fun sequenceLength(code: String, robotKeypadCache: MutableMap<String, String>): String {
+fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
     var current = recursiveKeypadMoves(code, numericKeypad)
     (0 until 25).forEach { i ->
         println("iteration: $i")
@@ -77,20 +90,24 @@ fun sequenceLength(code: String, robotKeypadCache: MutableMap<String, String>): 
 
 fun robotKeypadMoves(
     code: String,
-    cache: MutableMap<String, String>,
+    cache: RobotKeyCache,
 ): List<String> {
-    val result = mutableListOf<String>()
+    var result = ""
     var i = 0L
+    val start = robotKeypad.start()
+    var location = start
     while (i < code.length) {
         val j = bisectLargest(i + 1..code.length) {
-            cache[code.substring(i.toInt(), it.toInt())] != null
-        }
-        val s = cache[code.substring(i.toInt(), j.toInt())] ?: throw IllegalArgumentException("Invalid code")
-        result.add(s)
-        i = j
+            cache.get(location, code.substring(i.toInt(), it.toInt())) != null
+        }.toInt()
+        val p = cache.get(location, code.substring(i.toInt(), j)) ?: throw IllegalArgumentException("Invalid code")
+        result += p.first
+        location = p.second
+        cache.put(start, location, code.substring(0, j), result)
+        i = j.toLong()
     }
     // crop return to A
-    return result
+    return listOf(result)
 }
 
 fun recursiveKeypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
