@@ -54,7 +54,7 @@ fun sequenceLength(code: String): String {
     var current = keypadMoves(code, numericKeypad, "numeric")
     (0 until 25).forEach { i ->
         println("iteration: $i")
-        println("current: ${current.size}")
+        println("current: ${current.map { it.length }}")
         current = current.flatMap { keypadMoves(it, robotKeypad, "robot $i") }
     }
 //    println("depressurized: $depressurized: ${depressurized}")
@@ -77,11 +77,14 @@ data class Move(
     fun ready() {
         ready = true
     }
-    fun call() {
+
+    fun call(): Boolean {
         if (ready && !notified) {
             callback()
             notified = true
+            return true
         }
+        return false
     }
 }
 
@@ -95,16 +98,19 @@ fun keypadMoves(
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
-    val m = Move(code, start, cache) {
-    }
+    val m = Move(code, start, cache) {}
     val open = mutableListOf(m)
     val closed = mutableListOf<Move>()
     while (open.isNotEmpty()) {
         val move = open.removeLast()
         moves(keypad, open, cache, move)
         closed.add(move)
+        closed.indices.reversed().forEach { i ->
+            if (closed[i].call()) {
+                closed.removeAt(i)
+            }
+        }
     }
-    closed.reversed().forEach { it.call() }
     return cache[code]!!
 }
 
