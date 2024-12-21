@@ -52,7 +52,7 @@ fun main() {
 
 fun sequenceLength(code: String): String {
     var current = keypadMoves(code, numericKeypad)
-    (0 until 2).forEach {
+    (0 until 2).forEach { _ ->
         current = current.flatMap { keypadMoves(it, robotKeypad) }
     }
 //    println("depressurized: $depressurized: ${depressurized}")
@@ -68,18 +68,8 @@ data class Move(
     val code: String,
     val location: Point,
     val cache: MutableMap<String, List<String>>,
-    var result: (() -> List<String>)? = null
-) {
-    fun get(): List<String> {
-        cache[code]?.let { return it }
-        if (result == null) {
-            throw IllegalArgumentException("Result not set")
-        }
-        val r = result!!.invoke()
-        cache[code] = r
-        return r
-    }
-}
+    val ready: () -> Unit
+)
 
 fun keypadMoves(
     code: String,
@@ -90,43 +80,46 @@ fun keypadMoves(
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
-    val m = Move(code, start, cache)
+    val m = Move(code, start, cache) {}
     val open = mutableListOf(m)
     while (open.isNotEmpty()) {
         val move = open.removeLast()
-        move.result = moves(move.code, keypad, move.location, open, cache)
+        moves(keypad, open, cache, move)
     }
-    return m.get()
+    return cache[code]!!
 }
 
 private fun moves(
-    code: String,
     keypad: Keypad,
-    start: Point,
     open: MutableList<Move>,
-    cache: MutableMap<String, List<String>>
-): () -> List<String> {
+    cache: MutableMap<String, List<String>>,
+    move: Move
+) {
+    val code = move.code
+    val start = move.location
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
     val moves = moves(start, location, keypad)
     if (code.length == 1) {
-        return { moves }
+        cache[code] = moves
+        move.ready()
+        return
     }
 
-    val next = Move(code.drop(1), location, cache)
-    open.add(next)
-
-    return {
-        val n = next.get()
+    val next = code.drop(1)
+    open.add(Move(next, location, cache) {
+        val n = cache[next] ?: throw IllegalArgumentException("Invalid code $next")
         val all = moves.flatMap { m ->
             n.flatMap { listOf(m + it) }
         }
-        if (keypad == robotKeypad) {
+        val value = if (keypad == robotKeypad) {
             listOf(all.minBy { it.length })
         } else {
             all.distinct()
         }
-    }
+        cache[code] = value
+        move.ready()
+    })
 }
 
 fun moves(start: Point, dst: Point, keypad: Keypad): List<String> {
