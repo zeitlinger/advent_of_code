@@ -40,7 +40,8 @@ fun main() {
 //    sequenceLength("1")
     puzzle(126384) { lines ->
         lines.sumOf { code ->
-            val s = sequenceLength(code)
+            val robotKeypadCache = mutableMapOf<String, String>()
+            val s = sequenceLength(code, robotKeypadCache)
             val length = s.length
             val i = code.dropLast(1).toInt()
             println("$code: $s")
@@ -50,12 +51,12 @@ fun main() {
     }
 }
 
-fun sequenceLength(code: String): String {
-    var current = keypadMoves(code, numericKeypad, "numeric")
+fun sequenceLength(code: String, robotKeypadCache: MutableMap<String, String>): String {
+    var current = keypadMoves(code, numericKeypad, "numeric", null)
     (0 until 25).forEach { i ->
         println("iteration: $i")
         println("current: ${current.map { it.length }}")
-        current = current.flatMap { keypadMoves(it, robotKeypad, "robot $i") }
+        current = current.flatMap { keypadMoves(it, robotKeypad, "robot $i", robotKeypadCache) }
     }
 //    println("depressurized: $depressurized: ${depressurized}")
 //    println("radiation: $radiation: ${radiation}")
@@ -92,6 +93,7 @@ fun keypadMoves(
     code: String,
     keypad: Keypad,
     name: String,
+    robotKeypadCache: MutableMap<String, String>?,
     start: Point = keypad.start(),
 ): List<String> {
     val cache = mutableMapOf<String, List<String>>()
