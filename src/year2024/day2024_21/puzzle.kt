@@ -38,7 +38,7 @@ val robotKeypad = Keypad(
 
 fun main() {
 //    sequenceLength("1")
-    puzzle(126384L) { lines ->
+    puzzle(null) { lines ->
         lines.sumOf { code ->
             val s = sequenceLength(code)
             val length = s.length
@@ -51,15 +51,16 @@ fun main() {
 }
 
 fun sequenceLength(code: String): String {
-    val depressurized = keypadMoves(code, numericKeypad)
-    val radiation = depressurized.flatMap { keypadMoves(it, robotKeypad) }
-    val cold = radiation.flatMap { keypadMoves(it, robotKeypad) }
+    var current = keypadMoves(code, numericKeypad)
+    (0 until 2).forEach {
+        current = current.flatMap { keypadMoves(it, robotKeypad) }
+    }
 //    println("depressurized: $depressurized: ${depressurized}")
 //    println("radiation: $radiation: ${radiation}")
 //    println("cold: $cold: ${cold}")
 //    println("minBy: ${cold.minOf { it.length }}")
 //    throw IllegalArgumentException("done")
-    return cold.minBy { it.length }
+    return current.minBy { it.length }
 }
 
 fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
