@@ -4,7 +4,18 @@ import Direction
 import Point
 import puzzle
 
-data class Robot(val position: Point, val openMoves: Set<Direction>, val next: Robot?)
+data class Robot(
+    val name: String,
+    var position: Point,
+    val openMoves: MutableList<List<Direction>>,
+    val next: Robot?
+) {
+    fun consumeAllMoves(): Long {
+
+    }
+
+
+}
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
@@ -45,19 +56,40 @@ fun main() {
 }
 
 fun sequenceLength(code: String): Long {
-    val moves = keypadMoves(numericKeypad.start(), code, numericKeypad)
-    println(moves.map { it.symbol }.joinToString(""))
-    return 1
+    val depressurized = Robot(
+        "depressurized",
+        robotKeypad.start(),
+        keypadMoves(numericKeypad.start(), code, numericKeypad).toMutableList(),
+        null
+    )
+    val radiation = Robot(
+        "radiation",
+        robotKeypad.start(),
+        mutableListOf(),
+        depressurized
+    )
+    val cold = Robot(
+        "cold",
+        robotKeypad.start(),
+        mutableListOf(),
+        radiation
+    )
+
+    return cold.consumeAllMoves()
 }
 
-fun keypadMoves(start: Point, code: String, keypad: Keypad): List<Direction> {
+fun printMoves(moves: List<List<Direction>>) {
+    println(moves.map { it.map { it.symbol }.joinToString("") })
+}
+
+fun keypadMoves(start: Point, code: String, keypad: Keypad): List<List<Direction>> {
     if (code.isEmpty()) {
         return emptyList()
     }
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
     val moves = moves(start, location)
-    return moves + keypadMoves(location, code.drop(1), keypad)
+    return listOf(moves) + keypadMoves(location, code.drop(1), keypad)
 }
 
 fun moves(start: Point, dst: Point): List<Direction> {
