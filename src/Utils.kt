@@ -2,6 +2,7 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import kotlin.io.path.Path
 import kotlin.io.path.readText
+import kotlin.math.abs
 import kotlin.time.measureTime
 
 /**
@@ -86,6 +87,10 @@ data class Point(val x: Int, val y: Int) : Comparable<Point> {
                 Direction.LEFT
             }
         }
+    }
+
+    fun manhattanDistance(start: Point): Int {
+        return abs(x - start.x) + abs(y - start.y)
     }
 }
 

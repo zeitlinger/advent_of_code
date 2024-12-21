@@ -37,7 +37,7 @@ val robotKeypad = Keypad(
 )
 
 fun main() {
-    sequenceLength("1")
+//    sequenceLength("1")
     puzzle(126384L) { lines ->
         lines.sumOf { code ->
             val s = sequenceLength(code)
@@ -67,27 +67,27 @@ fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): St
     }
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
-    val moves = moves(start, location)
+    val moves = moves(start, location, keypad) + "A"
     if (moves.length < 2) {
 //        throw IllegalArgumentException("Invalid move $start -> $location")
     }
     return moves + keypadMoves(code.drop(1), keypad, location)
 }
 
-fun moves(start: Point, dst: Point): String {
-    val dx = dst.x - start.x
-    val dy = dst.y - start.y
-
-    val horizontalMoves = if (dx > 0) {
-        Direction.RIGHT.symbol.toString().repeat(dx)
-    } else {
-        Direction.LEFT.symbol.toString().repeat(-dx)
+fun moves(start: Point, dst: Point, keypad: Keypad): String {
+    if (start == dst) {
+        return ""
     }
-    val verticalMoves = if (dy > 0) {
-        Direction.DOWN.symbol.toString().repeat(dy)
-    } else {
-        Direction.UP.symbol.toString().repeat(-dy)
-    }
-    return horizontalMoves + verticalMoves + "A"
+    val distance = dst.manhattanDistance(start)
+    return Direction.entries.mapNotNull { direction ->
+        val p = start.move(direction)
+        val possible = p.manhattanDistance(dst) < distance && keypad.locations.values.contains(p)
+        if (possible) {
+            val moves = moves(start.move(direction), dst, keypad)
+            direction.symbol + moves
+        } else {
+            null
+        }
+    }.minBy { it.length }
 }
 
