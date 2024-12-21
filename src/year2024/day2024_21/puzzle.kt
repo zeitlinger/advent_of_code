@@ -52,21 +52,38 @@ fun main() {
 
 fun sequenceLength(code: String): String {
     var current = keypadMoves(code, numericKeypad)
-    (0 until 2).forEach {
+    (0 until 25).forEach {
         current = current.flatMap { keypadMoves(it, robotKeypad) }
     }
 //    println("depressurized: $depressurized: ${depressurized}")
 //    println("radiation: $radiation: ${radiation}")
 //    println("cold: $cold: ${cold}")
 //    println("minBy: ${cold.minOf { it.length }}")
+    println("length: ${current.size}")
 //    throw IllegalArgumentException("done")
     return current.minBy { it.length }
 }
 
-fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
+fun keypadMoves(
+    code: String,
+    keypad: Keypad,
+    start: Point = keypad.start(),
+    cache: MutableMap<String, List<String>> = mutableMapOf()
+): List<String> {
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
+    return cache.getOrPut(code) {
+        movesNoCache(code, keypad, start, cache)
+    }
+}
+
+private fun movesNoCache(
+    code: String,
+    keypad: Keypad,
+    start: Point,
+    cache: MutableMap<String, List<String>>
+): List<String> {
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
     val moves = moves(start, location, keypad)
@@ -74,13 +91,18 @@ fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): Li
         return moves
     }
 
-    val flatMap = moves.flatMap { m ->
-        keypadMoves(code.drop(1), keypad, location).flatMap {
+    val all = moves.flatMap { m ->
+        keypadMoves(code.drop(1), keypad, location, cache).flatMap {
             val list = listOf(m + it)
             list
         }
     }
-    return flatMap.distinct()
+    if (keypad == robotKeypad) {
+        val listOf = listOf(all.minBy { it.length })
+        return listOf
+    }
+
+    return all.distinct()
 }
 
 fun moves(start: Point, dst: Point, keypad: Keypad): List<String> {
