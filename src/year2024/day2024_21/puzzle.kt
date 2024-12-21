@@ -4,19 +4,6 @@ import Direction
 import Point
 import puzzle
 
-data class Robot(
-    val name: String,
-    var position: Point,
-    val openMoves: MutableList<List<Direction>>,
-    val next: Robot?
-) {
-    fun consumeAllMoves(): Long {
-
-    }
-
-
-}
-
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
         return locations.entries.single { it.key == 'A' }.value
@@ -41,71 +28,66 @@ val numericKeypad = Keypad(
 
 val robotKeypad = Keypad(
     mapOf(
-        '^' to Point(0, 0),
-        'A' to Point(1, 0),
+        '^' to Point(1, 0),
+        'A' to Point(2, 0),
         '<' to Point(0, 1),
         'v' to Point(1, 1),
-        '>' to Point(1, 2),
+        '>' to Point(2, 1),
     )
 )
 
 fun main() {
+    sequenceLength("1")
     puzzle(126384L) { lines ->
-        lines.sumOf { sequenceLength(it) * it.dropLast(1).toInt() }
+        lines.sumOf { code ->
+            val s = sequenceLength(code)
+            val length = s.length
+            val i = code.dropLast(1).toInt()
+            println("$code: $s")
+            println("$length * $i = ${length * i}")
+            length * i
+        }
     }
 }
 
-fun sequenceLength(code: String): Long {
-    val depressurized = Robot(
-        "depressurized",
-        robotKeypad.start(),
-        keypadMoves(numericKeypad.start(), code, numericKeypad).toMutableList(),
-        null
-    )
-    val radiation = Robot(
-        "radiation",
-        robotKeypad.start(),
-        mutableListOf(),
-        depressurized
-    )
-    val cold = Robot(
-        "cold",
-        robotKeypad.start(),
-        mutableListOf(),
-        radiation
-    )
-
-    return cold.consumeAllMoves()
+fun sequenceLength(code: String): String {
+    val depressurized = keypadMoves(code, numericKeypad)
+    val radiation = keypadMoves(depressurized, robotKeypad)
+    val cold = keypadMoves(radiation, robotKeypad)
+    println("depressurized: $depressurized: ${depressurized.length}")
+    println("radiation: $radiation: ${radiation.length}")
+    println("cold: $cold: ${cold.length}")
+    throw IllegalArgumentException("done")
+    return cold
 }
 
-fun printMoves(moves: List<List<Direction>>) {
-    println(moves.map { it.map { it.symbol }.joinToString("") })
-}
-
-fun keypadMoves(start: Point, code: String, keypad: Keypad): List<List<Direction>> {
+fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): String {
     if (code.isEmpty()) {
-        return emptyList()
+        return ""
     }
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
     val moves = moves(start, location)
-    return listOf(moves) + keypadMoves(location, code.drop(1), keypad)
+    if (moves.length < 2) {
+//        throw IllegalArgumentException("Invalid move $start -> $location")
+    }
+    return moves + keypadMoves(code.drop(1), keypad, location)
 }
 
-fun moves(start: Point, dst: Point): List<Direction> {
+fun moves(start: Point, dst: Point): String {
     val dx = dst.x - start.x
     val dy = dst.y - start.y
 
     val horizontalMoves = if (dx > 0) {
-        List(dx) { Direction.RIGHT }
+        Direction.RIGHT.symbol.toString().repeat(dx)
     } else {
-        List(-dx) { Direction.LEFT }
+        Direction.LEFT.symbol.toString().repeat(-dx)
     }
     val verticalMoves = if (dy > 0) {
-        List(dy) { Direction.DOWN }
+        Direction.DOWN.symbol.toString().repeat(dy)
     } else {
-        List(-dy) { Direction.UP }
+        Direction.UP.symbol.toString().repeat(-dy)
     }
-    return horizontalMoves + verticalMoves
+    return horizontalMoves + verticalMoves + "A"
 }
 
