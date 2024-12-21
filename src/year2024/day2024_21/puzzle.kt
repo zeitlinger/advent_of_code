@@ -53,6 +53,8 @@ fun main() {
 fun sequenceLength(code: String): String {
     var current = keypadMoves(code, numericKeypad, "numeric")
     (0 until 25).forEach { i ->
+        println("iteration: $i")
+        println("current: ${current.size}")
         current = current.flatMap { keypadMoves(it, robotKeypad, "robot $i") }
     }
 //    println("depressurized: $depressurized: ${depressurized}")
@@ -94,7 +96,6 @@ fun keypadMoves(
         throw IllegalArgumentException("Invalid code")
     }
     val m = Move(code, start, cache) {
-        cache[code] = listOf(code)
     }
     val open = mutableListOf(m)
     val closed = mutableListOf<Move>()
