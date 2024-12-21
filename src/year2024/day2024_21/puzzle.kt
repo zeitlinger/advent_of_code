@@ -3,6 +3,7 @@ package year2024.day2024_21
 import Direction
 import Point
 import puzzle
+import java.util.concurrent.Future
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
@@ -64,6 +65,13 @@ fun sequenceLength(code: String): String {
     return current.minBy { it.length }
 }
 
+data class Move(val code: String, val location: Point, var result: List<String> = emptyList()) {
+    fun get(): List<String> {
+        // todo
+        return onComplete(emptyList())
+    }
+}
+
 fun keypadMoves(
     code: String,
     keypad: Keypad,
@@ -73,36 +81,49 @@ fun keypadMoves(
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
-    return cache.getOrPut(code) {
-        movesNoCache(code, keypad, start, cache)
+    var result = emptyList<String>()
+    val elements = Move(code, start) {
+        result = it
+        it
     }
+    val open = mutableListOf(elements)
+    while (open.isNotEmpty()) {
+        val move = open.removeLast()
+        val moves = cache.getOrPut(code) {
+            movesNoCache(move.code, keypad, move.location, open)
+            move.onComplete(emptyList())
+        }
+    }
+    return result
 }
 
 private fun movesNoCache(
     code: String,
     keypad: Keypad,
     start: Point,
-    cache: MutableMap<String, List<String>>
-): List<String> {
+    open: MutableList<Move>
+): () -> List<String> {
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
     val moves = moves(start, location, keypad)
     if (code.length == 1) {
-        return moves
+        return { moves }
     }
 
-    val all = moves.flatMap { m ->
-        keypadMoves(code.drop(1), keypad, location, cache).flatMap {
-            val list = listOf(m + it)
-            list
+    val move = Move(code.drop(1), location)
+    val promises: List<Move> = moves.map { m ->
+        open.add(move)
+        move
+    }
+
+    return {
+        val all = promises.flatMap { it.get() }
+        if (keypad == robotKeypad) {
+            listOf(all.minBy { it.length })
+        } else {
+            all.distinct()
         }
     }
-    if (keypad == robotKeypad) {
-        val listOf = listOf(all.minBy { it.length })
-        return listOf
-    }
-
-    return all.distinct()
 }
 
 fun moves(start: Point, dst: Point, keypad: Keypad): List<String> {
