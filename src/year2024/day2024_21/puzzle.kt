@@ -52,42 +52,62 @@ fun main() {
 
 fun sequenceLength(code: String): String {
     val depressurized = keypadMoves(code, numericKeypad)
-    val radiation = keypadMoves(depressurized, robotKeypad)
-    val cold = keypadMoves(radiation, robotKeypad)
-    println("depressurized: $depressurized: ${depressurized.length}")
-    println("radiation: $radiation: ${radiation.length}")
-    println("cold: $cold: ${cold.length}")
+    val radiation = depressurized.flatMap { keypadMoves(it, robotKeypad) }
+    val cold = radiation.flatMap { keypadMoves(it, robotKeypad) }
+    println("depressurized: $depressurized: ${depressurized}")
+    println("radiation: $radiation: ${radiation}")
+    println("cold: $cold: ${cold}")
+    println("minBy: ${cold.minOf { it.length }}")
     throw IllegalArgumentException("done")
-    return cold
+    return cold.minBy { it.length }
 }
 
-fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): String {
+fun keypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
     if (code.isEmpty()) {
-        return ""
+        throw IllegalArgumentException("Invalid code")
     }
     val first = code.first()
     val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
-    val moves = moves(start, location, keypad) + "A"
-    if (moves.length < 2) {
-//        throw IllegalArgumentException("Invalid move $start -> $location")
+    val moves = moves(start, location, keypad)
+    if (code.length == 1) {
+        return moves
     }
-    return moves + keypadMoves(code.drop(1), keypad, location)
+
+    val flatMap = moves.flatMap { m ->
+        keypadMoves(code.drop(1), keypad, location).flatMap {
+            val list = listOf(m + it)
+            list
+        }
+    }
+    return flatMap.distinct()
 }
 
-fun moves(start: Point, dst: Point, keypad: Keypad): String {
-    if (start == dst) {
-        return ""
+fun moves(start: Point, dst: Point, keypad: Keypad): List<String> {
+    val dx = dst.x - start.x
+    val dy = dst.y - start.y
+
+    val horizontalMoves = if (dx > 0) {
+        Direction.RIGHT.symbol.toString().repeat(dx)
+    } else {
+        Direction.LEFT.symbol.toString().repeat(-dx)
     }
-    val distance = dst.manhattanDistance(start)
-    return Direction.entries.mapNotNull { direction ->
-        val p = start.move(direction)
-        val possible = p.manhattanDistance(dst) < distance && keypad.locations.values.contains(p)
-        if (possible) {
-            val moves = moves(start.move(direction), dst, keypad)
-            direction.symbol + moves
-        } else {
-            null
-        }
-    }.minBy { it.length }
+    val verticalMoves = if (dy > 0) {
+        Direction.DOWN.symbol.toString().repeat(dy)
+    } else {
+        Direction.UP.symbol.toString().repeat(-dy)
+    }
+    val moves = mutableListOf<String>()
+    val horizontal = Point(start.x + dx, start.y)
+    if (keypad.locations.values.contains(horizontal)) {
+        moves.add(horizontalMoves + verticalMoves + "A")
+    }
+    val vertical = Point(start.x, start.y + dy)
+    if (keypad.locations.values.contains(vertical)) {
+        moves.add(verticalMoves + horizontalMoves + "A")
+    }
+    if (moves.isEmpty()) {
+        throw IllegalArgumentException("Invalid move $start -> $dst")
+    }
+    return moves.distinct()
 }
 
