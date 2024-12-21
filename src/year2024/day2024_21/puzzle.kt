@@ -38,7 +38,7 @@ val robotKeypad = Keypad(
 
 fun main() {
 //    sequenceLength("1")
-    puzzle(null) { lines ->
+    puzzle(205160) { lines ->
         lines.sumOf { code ->
             val s = sequenceLength(code)
             val length = s.length
@@ -52,8 +52,10 @@ fun main() {
 
 fun sequenceLength(code: String): String {
     var current = keypadMoves(code, numericKeypad)
-    (0 until 25).forEach {
+    println("current: $current")
+    (0 until 5).forEach { _ ->
         current = current.flatMap { keypadMoves(it, robotKeypad) }
+        println("current: $current")
     }
 //    println("depressurized: $depressurized: ${depressurized}")
 //    println("radiation: $radiation: ${radiation}")
@@ -64,45 +66,47 @@ fun sequenceLength(code: String): String {
     return current.minBy { it.length }
 }
 
+//tailrec
 fun keypadMoves(
     code: String,
     keypad: Keypad,
     start: Point = keypad.start(),
-    cache: MutableMap<String, List<String>> = mutableMapOf()
+    cache: MutableMap<String, List<String>> = mutableMapOf(),
+    paths: List<String> = emptyList()
 ): List<String> {
     if (code.isEmpty()) {
         throw IllegalArgumentException("Invalid code")
     }
-    return cache.getOrPut(code) {
-        movesNoCache(code, keypad, start, cache)
-    }
+    return addPaths(paths, cache.getOrPut(code) {
+        val first = code.first()
+        val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
+        val moves = moves(start, location, keypad)
+        if (code.length == 1) {
+            moves
+        } else {
+            if (keypad == robotKeypad) {
+                return keypadMoves(code.drop(1), keypad, location, cache, listOf(moves.minBy { it.length }))
+            } else {
+                val all = moves.flatMap { m ->
+                    keypadMoves(code.drop(1), keypad, location, cache).flatMap {
+                        val list = listOf(m + it)
+                        list
+                    }
+                }
+                all.distinct()
+            }
+        }
+    })
 }
 
-private fun movesNoCache(
-    code: String,
-    keypad: Keypad,
-    start: Point,
-    cache: MutableMap<String, List<String>>
-): List<String> {
-    val first = code.first()
-    val location = keypad.locations[first] ?: throw IllegalArgumentException("Invalid code $first")
-    val moves = moves(start, location, keypad)
-    if (code.length == 1) {
-        return moves
-    }
-
-    val all = moves.flatMap { m ->
-        keypadMoves(code.drop(1), keypad, location, cache).flatMap {
-            val list = listOf(m + it)
-            list
+fun addPaths(paths: List<String>, list: List<String>): List<String> {
+    return if (paths.isEmpty()) {
+        list
+    } else {
+        paths.flatMap { p ->
+            list.map { l -> p + l }
         }
     }
-    if (keypad == robotKeypad) {
-        val listOf = listOf(all.minBy { it.length })
-        return listOf
-    }
-
-    return all.distinct()
 }
 
 fun moves(start: Point, dst: Point, keypad: Keypad): List<String> {
