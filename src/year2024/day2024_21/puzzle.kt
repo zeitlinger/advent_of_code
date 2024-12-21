@@ -54,11 +54,11 @@ fun sequenceLength(code: String): String {
     val depressurized = keypadMoves(code, numericKeypad)
     val radiation = depressurized.flatMap { keypadMoves(it, robotKeypad) }
     val cold = radiation.flatMap { keypadMoves(it, robotKeypad) }
-    println("depressurized: $depressurized: ${depressurized}")
-    println("radiation: $radiation: ${radiation}")
-    println("cold: $cold: ${cold}")
-    println("minBy: ${cold.minOf { it.length }}")
-    throw IllegalArgumentException("done")
+//    println("depressurized: $depressurized: ${depressurized}")
+//    println("radiation: $radiation: ${radiation}")
+//    println("cold: $cold: ${cold}")
+//    println("minBy: ${cold.minOf { it.length }}")
+//    throw IllegalArgumentException("done")
     return cold.minBy { it.length }
 }
 
