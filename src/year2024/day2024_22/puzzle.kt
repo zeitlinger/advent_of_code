@@ -22,11 +22,14 @@ data class Random(var value: Long) {
 
 fun main() {
     puzzle(37327623) { lines ->
-        val random = Random(123)
-        repeat(10) {
-            val next = random.next()
-            println(next)
+        lines.sumOf {
+            val random = Random(it.toLong())
+            var value = 0L
+            for (i in 0 until 2000) {
+                value = random.next()
+            }
+            println(value)
+            value
         }
-        0
     }
 }
