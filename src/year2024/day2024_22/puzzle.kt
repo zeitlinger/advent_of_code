@@ -41,18 +41,18 @@ fun main() {
 fun bananaCount(lookFor: List<Long>, prices: List<List<Long>>): Long {
     val count = prices.mapIndexed { index, price ->
         val i = price.windowed(5).indexOfFirst { delta(it) == lookFor }
-        val s = lookFor.joinToString(",")
-        if (s == "-2,1,-1,3" || s == "7,-6,5,2") {
-            println("i: $i seq: $lookFor index: $index")
-            if (i > -1) {
-                println(price.slice(i until i + 5))
-            }
-        }
+//        val s = lookFor.joinToString(",")
+//        if (s == "-2,1,-1,3" || s == "7,-6,5,2") {
+//            println("i: $i seq: $lookFor index: $index")
+//            if (i > -1) {
+//                println(price.slice(i until i + 5))
+//            }
+//        }
         if (i == -1) { 0 } else price[i + 4]
     }.sum()
-    if (count == 27L) {
-        println("seq: $lookFor count: $count")
-    }
+//    if (count == 27L) {
+//        println("seq: $lookFor count: $count")
+//    }
 //    println("seq: $lookFor count: $count")
     return count
 }
