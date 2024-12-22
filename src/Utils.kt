@@ -165,3 +165,20 @@ fun bisectLargest(range: LongRange, predicate: (Long) -> Boolean): Long {
     return left
 }
 
+fun <T> Set<T>.permutations(): Set<List<T>> {
+    if (this.isEmpty()) return emptySet()
+
+    fun <T> _allPermutations(list: List<T>): Set<List<T>> {
+        if (list.isEmpty()) return setOf(emptyList())
+
+        val result: MutableSet<List<T>> = mutableSetOf()
+        for (i in list.indices) {
+            _allPermutations(list - list[i]).forEach {
+                item -> result.add(item + list[i])
+            }
+        }
+        return result
+    }
+
+    return _allPermutations(this.toList())
+}
