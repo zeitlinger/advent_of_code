@@ -20,7 +20,7 @@ data class Random(var value: Long) {
     }
 }
 
-data class Prices(val values: List<Int>, val deltas: List<List<Int>>)
+data class Prices(val values: List<Int>, val deltas: Map<List<Int>, Int>)
 
 fun main() {
     puzzle(23) { lines ->
@@ -33,20 +33,21 @@ fun main() {
 
         val prices = lines.map {
             val values = prices(Random(it.toLong()))
-            Prices(values, values.windowed(5).mapIndexed { index, ints ->
+            val deltas = values.windowed(5).mapIndexed { index, ints ->
                 val delta = delta(ints)
-                delta
-            })
+                delta to index
+            }.distinctBy { it.first }.toMap()
+            Prices(values, deltas)
         }
-        val sequences = prices.flatMap { it.deltas }.distinct()
-        println(sequences.size)
+        val sequences = prices.flatMap { it.deltas.map { it.key } }.distinct()
+        println("sequences: ${sequences.size}")
         sequences.maxOfOrNull { bananaCount(it, prices) }!!
     }
 }
 
 fun bananaCount(lookFor: List<Int>, prices: List<Prices>): Int {
     val count = prices.mapIndexed { index, price ->
-        val i = price.deltas.indexOfFirst { it == lookFor }
+        val i = price.deltas[lookFor]
 //        val s = lookFor.joinToString(",")
 //        if (s == "-2,1,-1,3" || s == "7,-6,5,2") {
 //            println("i: $i seq: $lookFor index: $index")
@@ -54,7 +55,7 @@ fun bananaCount(lookFor: List<Int>, prices: List<Prices>): Int {
 //                println(price.slice(i until i + 5))
 //            }
 //        }
-        if (i == -1) {
+        if (i == null) {
             0
         } else price.values[i + 4]
     }.sum()
