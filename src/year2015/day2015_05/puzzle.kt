@@ -8,12 +8,14 @@ fun main() {
     }
 }
 
-val vowels = "aeiou".toSet()
-val forbidden = setOf("ab", "cd", "pq", "xy")
-
 fun nice(s: String): Boolean {
-    val vowels = s.count { it in vowels }
-    val double = s.zipWithNext().any { it.first == it.second }
-    val forbidden = forbidden.any { it in s }
-    return vowels >= 3 && double && !forbidden
+    val double = 0.until(s.length - 2).any {
+        val other = s.substring(it + 2).indexOf(s.substring(it, it + 2))
+        other != -1
+    }
+    val palindrome = 1.until(s.length - 1).any {
+        s[it - 1] == s[it + 1]
+    }
+
+    return double && palindrome
 }
