@@ -70,6 +70,7 @@ fun main() {
             val i = code.dropLast(1).toInt()
             println("$code: $s")
             println("$length * $i = ${length * i}")
+            throw IllegalArgumentException("done")
             length * i
         }
     }
@@ -106,12 +107,19 @@ private fun addCache(
 fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
     var current = recursiveKeypadMoves(code, numericKeypad)
     var last = 0
-    (0 until 25).forEach { i ->
-        val d = 2.5.pow(i ).toDouble() * 14
+    (0 until 4).forEach { i ->
+        val d = 2.5.pow(i).toDouble() * 14
         println("iteration: $i")
         println("current: ${current.map { it.length }}")
         println("d: $d")
-        current = current.flatMap { robotKeypadMoves(it, robotKeypadCache) }
+        current = current.flatMap {
+            val pair = robotKeypadMoves(it, robotKeypadCache)
+            val d = pair.second
+            println("deltas: ${d.sum()} ${d.count()}")
+            println(d)
+            println(pair.first)
+            pair.first
+        }
         val cur = current.minOf { it.length }
         if (last > 0) {
             println("ratio ${cur / last.toDouble()}")
@@ -129,23 +137,27 @@ fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
 fun robotKeypadMoves(
     code: String,
     cache: RobotKeyCache,
-): List<String> {
+): Pair<List<String>, List<Int>> {
     var result = ""
     var i = 0L
     val start = robotKeypad.start()
     var location = start
+    val deltas = mutableListOf<Int>()
     while (i < code.length) {
         val j = bisectLargest(i + 1..code.length.coerceAtMost(cacheSize)) {
             cache.get(location, code.substring(i.toInt(), it.toInt())) != null
         }.toInt()
         val p = cache.get(location, code.substring(i.toInt(), j)) ?: throw IllegalArgumentException("Invalid code")
+        val to = p.second
         result += p.first
-        location = p.second
+        deltas.add(location.manhattanDistance(start))
+        deltas.add(start.manhattanDistance(to))
+        location = to
 //        cache.put(start, location, code.substring(0, j), result)
         i = j.toLong()
     }
     // crop return to A
-    return listOf(result)
+    return listOf(result) to deltas
 }
 
 fun recursiveKeypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
