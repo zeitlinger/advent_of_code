@@ -6,7 +6,7 @@ import puzzle
 data class Connection(val route: List<String>, val distance: Int)
 
 fun main() {
-    puzzle(605) { lines ->
+    puzzle(982) { lines ->
         lines.map {
             val (from, to, distance) = it.split(" to ", " = ")
             Connection(listOf(from, to), distance.toInt())
@@ -16,7 +16,7 @@ fun main() {
                 path.windowed(2).sumOf { (from, to) ->
                     connections.first { from in it.route && to in it.route }.distance
                 }
-            }.let { it.minOrNull()!! }
+            }.let { it.maxOrNull()!! }
         }
     }
 }
