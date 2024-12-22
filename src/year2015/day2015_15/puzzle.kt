@@ -17,7 +17,7 @@ data class Ingredient(
 data class Amount(val ingredient: Ingredient, val amount: Int)
 
 fun main() {
-    puzzle(62842880) { lines ->
+    puzzle(57600000) { lines ->
         val ingredients = lines.map {
             val (name, capacity, durability, flavor, texture, calories) = regex.matchEntire(it)!!.destructured
             Ingredient(name, capacity.toInt(), durability.toInt(), flavor.toInt(), texture.toInt(), calories.toInt())
@@ -28,7 +28,8 @@ fun main() {
             val durability = it.sumOf { it.ingredient.durability * it.amount }
             val flavor = it.sumOf { it.ingredient.flavor * it.amount }
             val texture = it.sumOf { it.ingredient.texture * it.amount }
-            if (capacity > 0 && durability > 0 && flavor > 0 && texture > 0) {
+            val calories = it.sumOf { it.ingredient.calories * it.amount }
+            if (capacity > 0 && durability > 0 && flavor > 0 && texture > 0 && calories == 500) {
                 capacity * durability * flavor * texture
             } else {
                 0
