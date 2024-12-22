@@ -33,7 +33,10 @@ fun main() {
 
         val prices = lines.map {
             val values = prices(Random(it.toLong()))
-            Prices(values, delta(values))
+            Prices(values, values.windowed(5).mapIndexed { index, ints ->
+                val delta = delta(ints)
+                delta
+            })
         }
         val sequences = prices.flatMap { it.deltas }.distinct()
         println(sequences.size)
@@ -62,18 +65,16 @@ fun bananaCount(lookFor: List<Int>, prices: List<Prices>): Int {
     return count
 }
 
-fun delta(prices: List<Int>): List<List<Int>> {
-    return prices
-        .windowed(5).map {
-            it.mapIndexed { index, l ->
-                if (index == 0) {
-                    0
-                } else {
-                    l - prices[index - 1]
-                }
-            }.drop(1)
+fun delta(prices: List<Int>): List<Int> {
+    return prices.mapIndexed { index, l ->
+        if (index == 0) {
+            0
+        } else {
+            l - prices[index - 1]
         }
+    }.drop(1)
 }
+
 
 fun prices(random: Random): List<Int> {
     val map = (0 until 2000).map {
