@@ -156,7 +156,6 @@ fun bisectLargest(range: LongRange, predicate: (Long) -> Boolean): Long {
     while (left < right) {
         val mid = left + (right - left + 1) / 2
         val b = predicate(mid)
-        println("Bisect $left = $b")
         if (b) {
             left = mid
         } else {

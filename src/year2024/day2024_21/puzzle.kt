@@ -48,6 +48,8 @@ data class RobotKeyCache(private val cache: MutableMap<Point, MutableMap<String,
     }
 }
 
+private const val cacheSize = 2
+
 fun main() {
 //    sequenceLength("1")
     puzzle(126384) { lines ->
@@ -55,11 +57,19 @@ fun main() {
             val robotKeypadCache = RobotKeyCache(mutableMapOf())
             // warm up cache
             robotKeypad.locations.entries.forEach { e ->
-                robotKeypad.locations.values.forEach { from ->
-                    val key = e.key
-                    val to = e.value
-                    val toKey = moves(from, to, robotKeypad).first()
-                    robotKeypadCache.put(from, to, key.toString(), toKey)
+                val key = e.key
+                val start = e.value
+                var seq = ""
+                var input = ""
+                var from = start
+                repeat(cacheSize) {
+                    robotKeypad.locations.entries.forEach { entry ->
+                        val to = entry.value
+                        input += entry.key.toString()
+                        seq += moves(from, to, robotKeypad).first<String>()
+                        robotKeypadCache.put(start, to, input, seq)
+                        from = to
+                    }
                 }
             }
 
@@ -97,13 +107,13 @@ fun robotKeypadMoves(
     val start = robotKeypad.start()
     var location = start
     while (i < code.length) {
-        val j = bisectLargest(i + 1..code.length) {
+        val j = bisectLargest(i + 1..code.length.coerceAtMost(cacheSize)) {
             cache.get(location, code.substring(i.toInt(), it.toInt())) != null
         }.toInt()
         val p = cache.get(location, code.substring(i.toInt(), j)) ?: throw IllegalArgumentException("Invalid code")
         result += p.first
         location = p.second
-        cache.put(start, location, code.substring(0, j), result)
+//        cache.put(start, location, code.substring(0, j), result)
         i = j.toLong()
     }
     // crop return to A
