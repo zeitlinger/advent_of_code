@@ -48,7 +48,7 @@ data class RobotKeyCache(private val cache: MutableMap<Point, MutableMap<String,
     }
 }
 
-private const val cacheSize = 8
+private const val cacheSize = 2
 
 fun main() {
 //    sequenceLength("1")
@@ -88,6 +88,13 @@ private fun addCache(
     }
     val to = entry.value
     val input1 = input + entry.key.toString()
+    if (input1.endsWith("^^")
+        || input1.endsWith("vv")
+        || input1.endsWith("<<<")
+        || input1.endsWith(">>>")
+    ) {
+        return
+    }
     val seq1 = seq + moves(from, to, robotKeypad).first()
     robotKeypadCache.put(start, to, input1, seq1)
     robotKeypad.locations.entries.forEach { e ->
@@ -97,10 +104,16 @@ private fun addCache(
 
 fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
     var current = recursiveKeypadMoves(code, numericKeypad)
+    var last = 0
     (0 until 25).forEach { i ->
         println("iteration: $i")
         println("current: ${current.map { it.length }}")
         current = current.flatMap { robotKeypadMoves(it, robotKeypadCache) }
+        val cur = current.minOf { it.length }
+        if (last > 0) {
+            println("ratio ${cur / last.toDouble()}")
+        }
+        last = cur
     }
 //    println("depressurized: $depressurized: ${depressurized}")
 //    println("radiation: $radiation: ${radiation}")
