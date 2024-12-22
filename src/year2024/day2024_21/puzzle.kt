@@ -48,7 +48,7 @@ data class RobotKeyCache(private val cache: MutableMap<Point, MutableMap<String,
     }
 }
 
-private const val cacheSize = 2
+private const val cacheSize = 8
 
 fun main() {
 //    sequenceLength("1")
@@ -57,19 +57,10 @@ fun main() {
             val robotKeypadCache = RobotKeyCache(mutableMapOf())
             // warm up cache
             robotKeypad.locations.entries.forEach { e ->
-                val key = e.key
                 val start = e.value
-                var seq = ""
-                var input = ""
-                var from = start
-                repeat(cacheSize) {
-                    robotKeypad.locations.entries.forEach { entry ->
-                        val to = entry.value
-                        input += entry.key.toString()
-                        seq += moves(from, to, robotKeypad).first<String>()
-                        robotKeypadCache.put(start, to, input, seq)
-                        from = to
-                    }
+                println("add cache: ${e.key}")
+                robotKeypad.locations.entries.forEach { entry ->
+                    addCache(entry, "", "", start, robotKeypadCache, start, cacheSize)
                 }
             }
 
@@ -80,6 +71,27 @@ fun main() {
             println("$length * $i = ${length * i}")
             length * i
         }
+    }
+}
+
+private fun addCache(
+    entry: Map.Entry<Char, Point>,
+    input: String,
+    seq: String,
+    from: Point,
+    robotKeypadCache: RobotKeyCache,
+    start: Point,
+    iterations: Int
+) {
+    if (iterations == 0) {
+        return
+    }
+    val to = entry.value
+    val input1 = input + entry.key.toString()
+    val seq1 = seq + moves(from, to, robotKeypad).first()
+    robotKeypadCache.put(start, to, input1, seq1)
+    robotKeypad.locations.entries.forEach { e ->
+        addCache(e, input1, seq1, to, robotKeypadCache, start, iterations - 1)
     }
 }
 
