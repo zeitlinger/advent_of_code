@@ -4,13 +4,21 @@ import puzzle
 
 fun main() {
     puzzle(null) { lines ->
-        var floor = 0
-        lines[0].forEach {
-            when (it) {
-                '(' -> floor++
-                ')' -> floor--
-            }
-        }
-        floor
+        getFloor(lines)
     }
+}
+
+private fun getFloor(lines: List<String>): Int {
+    var floor = 0
+    lines[0].forEachIndexed { index, c ->
+        when (c) {
+            '(' -> floor++
+            ')' -> floor--
+        }
+        if (floor == -1) {
+            println("Basement: ${index + 1}")
+            return index + 1
+        }
+    }
+    return floor
 }
