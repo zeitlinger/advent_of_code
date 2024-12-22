@@ -6,10 +6,10 @@ import stringPuzzle
 fun main() {
     stringPuzzle("6") { lines ->
         var s = if (lines.test) "1" else "3113322113"
-        val iterations = if (lines.test) 5 else 40
+        val iterations = if (lines.test) 5 else 50
         repeat(iterations) {
             s = lookAndSay(s)
-            println("Iteration ${it + 1}: ${s.length} => $s")
+            println("Iteration ${it + 1}: ${s.length}")
         }
         s.length.toString()
     }
