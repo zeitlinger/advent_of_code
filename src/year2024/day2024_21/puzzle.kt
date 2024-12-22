@@ -4,6 +4,7 @@ import Direction
 import Point
 import bisectLargest
 import puzzle
+import kotlin.math.pow
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
@@ -106,8 +107,10 @@ fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
     var current = recursiveKeypadMoves(code, numericKeypad)
     var last = 0
     (0 until 25).forEach { i ->
+        val d = 2.5.pow(i ).toDouble() * 14
         println("iteration: $i")
         println("current: ${current.map { it.length }}")
+        println("d: $d")
         current = current.flatMap { robotKeypadMoves(it, robotKeypadCache) }
         val cur = current.minOf { it.length }
         if (last > 0) {
