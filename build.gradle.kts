@@ -12,6 +12,7 @@ sourceSets {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0-RC")
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.11.1")
 }
