@@ -20,6 +20,8 @@ data class Random(var value: Long) {
     }
 }
 
+data class Prices(val values: List<Int>, val deltas: List<List<Int>>)
+
 fun main() {
     puzzle(23) { lines ->
 //        val random = Random(123)
@@ -30,17 +32,18 @@ fun main() {
 //        }
 
         val prices = lines.map {
-            prices(Random(it.toLong()))
+            val values = prices(Random(it.toLong()))
+            Prices(values, delta(values))
         }
-        val sequences = prices.flatMap { it.windowed(5).map { delta(it) } }.distinct()
+        val sequences = prices.flatMap { it.deltas }.distinct()
         println(sequences.size)
         sequences.maxOfOrNull { bananaCount(it, prices) }!!
     }
 }
 
-fun bananaCount(lookFor: List<Long>, prices: List<List<Long>>): Long {
+fun bananaCount(lookFor: List<Int>, prices: List<Prices>): Int {
     val count = prices.mapIndexed { index, price ->
-        val i = price.windowed(5).indexOfFirst { delta(it) == lookFor }
+        val i = price.deltas.indexOfFirst { it == lookFor }
 //        val s = lookFor.joinToString(",")
 //        if (s == "-2,1,-1,3" || s == "7,-6,5,2") {
 //            println("i: $i seq: $lookFor index: $index")
@@ -48,7 +51,9 @@ fun bananaCount(lookFor: List<Long>, prices: List<List<Long>>): Long {
 //                println(price.slice(i until i + 5))
 //            }
 //        }
-        if (i == -1) { 0 } else price[i + 4]
+        if (i == -1) {
+            0
+        } else price.values[i + 4]
     }.sum()
 //    if (count == 27L) {
 //        println("seq: $lookFor count: $count")
@@ -57,20 +62,22 @@ fun bananaCount(lookFor: List<Long>, prices: List<List<Long>>): Long {
     return count
 }
 
-fun delta(prices: List<Long>): List<Long> {
-    return prices.mapIndexed { index, l ->
-        if (index == 0) {
-            0
-        } else {
-            l - prices[index - 1]
+fun delta(prices: List<Int>): List<List<Int>> {
+    return prices
+        .windowed(5).map {
+            it.mapIndexed { index, l ->
+                if (index == 0) {
+                    0
+                } else {
+                    l - prices[index - 1]
+                }
+            }.drop(1)
         }
-    }.drop(1)
 }
 
-fun prices(random: Random): List<Long> {
+fun prices(random: Random): List<Int> {
     val map = (0 until 2000).map {
-        val mod: Long = random.next().mod(10L)
-        mod
+        random.next().toInt().mod(10)
     }
     return map
 }
