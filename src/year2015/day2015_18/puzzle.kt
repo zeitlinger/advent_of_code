@@ -4,11 +4,12 @@ import puzzle
 import stringPuzzle
 
 fun main() {
-    stringPuzzle("4") { input ->
-        val steps = if (input.test) 4 else 100
+    stringPuzzle("17") { input ->
+        val steps = if (input.test) 5 else 100
         var grid = input.lines.map { line ->
             line.map { it == '#' }
         }
+        grid = sticky(grid)
         for (step in 1..steps) {
             grid = grid.mapIndexed { y, row ->
                 row.mapIndexed { x, light ->
@@ -31,7 +32,14 @@ fun main() {
                     }
                 }
             }
+            grid = sticky(grid)
         }
         grid.sumOf { row -> row.count { it } }.toString()
+    }
+}
+
+private fun sticky(grid: List<List<Boolean>>) = grid.mapIndexed { y, row ->
+    row.mapIndexed { x, light ->
+        light || (x == 0 && y == 0) || (x == 0 && y == grid.size - 1) || (x == row.size - 1 && y == 0) || (x == row.size - 1 && y == grid.size - 1)
     }
 }
