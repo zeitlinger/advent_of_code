@@ -4,26 +4,28 @@ import puzzle
 import stringPuzzle
 
 fun main() {
-    stringPuzzle("4") { input ->
+    stringPuzzle("3") { input ->
         val total = if (input.test) 25 else 150
         val containers = input.lines.map { it.toInt() }
-        combinations(total, containers, emptyList()).toString()
+        val list = combinations(total, containers, emptyList())
+        val l = list.minOf { it.size }
+        list.count { it.size == l }.toString()
     }
 }
 
-fun combinations(total: Int, containers: List<Int>, taken: List<Int>): Int {
+fun combinations(total: Int, containers: List<Int>, taken: List<Int>): List<List<Int>> {
     if (total == 0) {
-        return 1
+        return listOf(taken)
     }
     if (total <= 0) {
-        return 0
+        return emptyList()
     }
     val first = containers.first()
     return if (containers.size == 1) {
         if (total == first) {
-            1
+            listOf(taken + first)
         } else {
-            0
+            emptyList()
         }
     } else {
         val rest = containers.drop(1)
