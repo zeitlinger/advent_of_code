@@ -2,13 +2,16 @@ package year2024.day2024_21
 
 import Direction
 import Point
-import bisectLargest
 import puzzle
-import kotlin.math.pow
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
         return locations.entries.single { it.key == 'A' }.value
+    }
+
+    fun pointToIndex(point: Point): Int {
+        return locations.entries.mapIndexedNotNull { index, entry -> if (entry.value == point) index else null }
+            .single()
     }
 }
 
@@ -38,126 +41,92 @@ val robotKeypad = Keypad(
     )
 )
 
-data class RobotKeyCache(private val cache: MutableMap<Point, MutableMap<String, Pair<String, Point>>>) {
-    // todo only need length
-    fun get(from: Point, codePart: String): Pair<String, Point>? {
-        return cache[from]?.get(codePart)
+data class RobotNavigator(
+    val current: Int,
+    var next: List<Pair<RobotNavigator, List<Int>>>,
+) {
+    fun next(key: Int): Pair<RobotNavigator, List<Int>> {
+        return next[key]
     }
 
-    fun put(from: Point, to: Point, input: String, output: String) {
-        cache.getOrPut(from) { mutableMapOf() }[input] = output to to
+    override fun toString(): String {
+        return "RobotNavigator(current=$current)"
     }
 }
-
-private const val cacheSize = 2
 
 fun main() {
 //    sequenceLength("1")
     puzzle(126384) { lines ->
+        val robotKeypadCache = createNavigator()
         lines.sumOf { code ->
-            val robotKeypadCache = RobotKeyCache(mutableMapOf())
-            // warm up cache
-            robotKeypad.locations.entries.forEach { e ->
-                val start = e.value
-                println("add cache: ${e.key}")
-                robotKeypad.locations.entries.forEach { entry ->
-                    addCache(entry, "", "", start, robotKeypadCache, start, cacheSize)
-                }
-            }
+            val length = sequenceLength(code, robotKeypadCache)
 
-            val s = sequenceLength(code, robotKeypadCache)
-            val length = s.length
             val i = code.dropLast(1).toInt()
-            println("$code: $s")
             println("$length * $i = ${length * i}")
-            throw IllegalArgumentException("done")
             length * i
         }
     }
 }
 
-private fun addCache(
-    entry: Map.Entry<Char, Point>,
-    input: String,
-    seq: String,
-    from: Point,
-    robotKeypadCache: RobotKeyCache,
-    start: Point,
-    iterations: Int
-) {
-    if (iterations == 0) {
-        return
-    }
-    val to = entry.value
-    val input1 = input + entry.key.toString()
-    if (input1.endsWith("^^")
-        || input1.endsWith("vv")
-        || input1.endsWith("<<<")
-        || input1.endsWith(">>>")
-    ) {
-        return
-    }
-    val seq1 = seq + moves(from, to, robotKeypad).first()
-    robotKeypadCache.put(start, to, input1, seq1)
+private fun createNavigator(): RobotNavigator {
+//    val next = mutableMapOf<Int, Pair<RobotNavigator, List<Int>>>()
+    val all = mutableMapOf<Int, List<Pair<Int, List<Int>>>>()
+//    val robotKeypadCache = RobotNavigator(mutableMapOf())
+    // warm up cache
     robotKeypad.locations.entries.forEach { e ->
-        addCache(e, input1, seq1, to, robotKeypadCache, start, iterations - 1)
+        val start = e.value
+        val startIndex = robotKeypad.pointToIndex(start)
+        println("add cache: ${e.key}")
+        val pairs = robotKeypad.locations.entries.map { entry ->
+            val end = entry.value
+            val endIndex = robotKeypad.pointToIndex(end)
+            val movesToIndexes = movesToIndexes(moves(start, end, robotKeypad).first())
+            endIndex to movesToIndexes
+
+//            addCache(entry, "", "", start, robotKeypadCache, start, 1)
+        }
+        all[startIndex] = pairs
     }
+    val list = all.keys.map { RobotNavigator(it, emptyList()) }
+    list.forEach { navigator ->
+        val pairs = all[navigator.current]!!
+        navigator.next = pairs.map { (next, moves) ->
+            list[next] to moves
+        }
+    }
+    return list[robotKeypad.pointToIndex(robotKeypad.start())]
 }
 
-fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
-    var current = recursiveKeypadMoves(code, numericKeypad)
-    var last = 0
-    (0 until 4).forEach { i ->
-        val d = 2.5.pow(i).toDouble() * 14
+fun sequenceLength(code: String, robotKeypadCache: RobotNavigator): Int {
+    val recursiveKeypadMoves = recursiveKeypadMoves(code, numericKeypad).minBy { it.length }
+    var iterator = movesToIndexes(recursiveKeypadMoves).iterator()
+    (0 until 2).forEach { i ->
         println("iteration: $i")
-        println("current: ${current.map { it.length }}")
-        println("d: $d")
-        current = current.flatMap {
-            val pair = robotKeypadMoves(it, robotKeypadCache)
-            val d = pair.second
-            println("deltas: ${d.sum()} ${d.count()}")
-            println(d)
-            println(pair.first)
-            pair.first
-        }
-        val cur = current.minOf { it.length }
-        if (last > 0) {
-            println("ratio ${cur / last.toDouble()}")
-        }
-        last = cur
+        iterator = robotKeypadMoves(robotKeypadCache, iterator, i)
     }
-//    println("depressurized: $depressurized: ${depressurized}")
-//    println("radiation: $radiation: ${radiation}")
-//    println("cold: $cold: ${cold}")
-//    println("minBy: ${cold.minOf { it.length }}")
-//    throw IllegalArgumentException("done")
-    return current.minBy { it.length }
+    val count = iterator.asSequence().count()
+    println("count: $count")
+    return count
+}
+
+private fun movesToIndexes(recursiveKeypadMoves: String): List<Int> = recursiveKeypadMoves.map {
+    robotKeypad.pointToIndex(robotKeypad.locations.entries.single { e -> e.key == it }.value)
 }
 
 fun robotKeypadMoves(
-    code: String,
-    cache: RobotKeyCache,
-): Pair<List<String>, List<Int>> {
-    var result = ""
-    var i = 0L
-    val start = robotKeypad.start()
-    var location = start
-    val deltas = mutableListOf<Int>()
-    while (i < code.length) {
-        val j = bisectLargest(i + 1..code.length.coerceAtMost(cacheSize)) {
-            cache.get(location, code.substring(i.toInt(), it.toInt())) != null
-        }.toInt()
-        val p = cache.get(location, code.substring(i.toInt(), j)) ?: throw IllegalArgumentException("Invalid code")
-        val to = p.second
-        result += p.first
-        deltas.add(location.manhattanDistance(start))
-        deltas.add(start.manhattanDistance(to))
-        location = to
-//        cache.put(start, location, code.substring(0, j), result)
-        i = j.toLong()
+    start: RobotNavigator,
+    targetKeypad: Iterator<Int>,
+    level: Int,
+): Iterator<Int> {
+    var navigator = start
+    return iterator {
+        while (targetKeypad.hasNext()) {
+            val input = targetKeypad.next()
+            val next = navigator.next(input)
+            navigator = next.first
+            yieldAll(next.second)
+        }
     }
-    // crop return to A
-    return listOf(result) to deltas
 }
 
 fun recursiveKeypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
