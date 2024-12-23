@@ -1,11 +1,10 @@
 package year2024.day2024_23
 
-import puzzle
-import permutations
+import stringPuzzle
 
 val regex = Regex("""(\w+)-(\w+)""")
 
-data class Connection(val computers: List<String>) {
+data class Connection(val computers: Set<String>) {
     fun other(computer: String): String {
         return computers.first { it != computer }
     }
@@ -16,28 +15,31 @@ data class Connection(val computers: List<String>) {
 }
 
 fun main() {
-    puzzle(7) { lines ->
-        val all = lines.map {
-            regex.matchEntire(it)!!.destructured
-                .let { (a, b) -> Connection(listOf(a, b)) }
+    stringPuzzle("co,de,ka,ta") { lines ->
+        val all = lines.lines.map {
+            regex.matchEntire(it)!!.destructured.let { (a, b) -> Connection(setOf(a, b)) }
         }
-        val flatMap = all.flatMap { it.computers.filter { it.startsWith("t") } }
-            .flatMap { inLanParty(all, it) }
-            .toSet()
-        flatMap.size
+        var largestParty = setOf<String>()
+        all.forEach { connection ->
+            if (connection.computers.first() in largestParty) {
+                return@forEach
+            }
+            val party = largestParty(all, connection.computers)
+            if (party.size > largestParty.size) {
+                largestParty = party
+
+            }
+        }
+        largestParty.sorted().joinToString(",")
     }
 }
 
-fun inLanParty(all: List<Connection>, start: String): Set<Set<String>> {
-    val second = all.filter { it.isConnection(start) }.flatMap { it.computers }
-    val zip = second.flatMap { a -> second.map { a to it } }
-    val list = zip
-        .filter { (a, b) ->
-            a != b && a != start && b != start && connected(all, a, b)
-        }
-    val distinct = list.map { (a, b) -> setOf(a, b, start) }
-        .toSet()
-    return distinct
+fun largestParty(all: List<Connection>, members: Set<String>): Set<String> {
+    val tryNext = all.filter { next ->
+        next.computers.any { it in members } && next.computers.any { it !in members }
+    }.flatMap { it.computers }.toSet() - members
+    val next = tryNext.firstOrNull { new -> members.all { connected(all, it, new) } } ?: return members
+    return largestParty(all, members + next)
 }
 
 fun connected(all: List<Connection>, a: String, b: String): Boolean {
