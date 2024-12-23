@@ -53,19 +53,19 @@ fun main() {
         val found = aunts.asSequence().filter { aunt ->
             aunt.children == null || aunt.children == evidence.children
         }.filter { aunt ->
-            aunt.cats == null || aunt.cats == evidence.cats
+            aunt.cats == null || aunt.cats > evidence.cats!!
         }.filter { aunt ->
             aunt.samoyeds == null || aunt.samoyeds == evidence.samoyeds
         }.filter { aunt ->
-            aunt.pomeranians == null || aunt.pomeranians == evidence.pomeranians
+            aunt.pomeranians == null || aunt.pomeranians < evidence.pomeranians!!
         }.filter { aunt ->
             aunt.akitas == null || aunt.akitas == evidence.akitas
         }.filter { aunt ->
             aunt.vizslas == null || aunt.vizslas == evidence.vizslas
         }.filter { aunt ->
-            aunt.goldfish == null || aunt.goldfish == evidence.goldfish
+            aunt.goldfish == null || aunt.goldfish < evidence.goldfish!!
         }.filter { aunt ->
-            aunt.trees == null || aunt.trees == evidence.trees
+            aunt.trees == null || aunt.trees > evidence.trees!!
         }.filter { aunt ->
             aunt.cars == null || aunt.cars == evidence.cars
         }.filter { aunt ->
