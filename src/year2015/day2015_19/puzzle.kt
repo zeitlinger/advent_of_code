@@ -5,7 +5,7 @@ import puzzle
 data class Replacement(val from: String, val to: String)
 
 fun main() {
-    puzzle(7) { lines ->
+    puzzle(6) { lines ->
         val start = lines.last()
         val replacements = lines.dropLast(1).map {
             val (from, to) = it.split(" => ")

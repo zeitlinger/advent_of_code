@@ -128,7 +128,9 @@ fun robotKeypadMoves(
 ): Iterator<Int> {
     var navigator = start
     return iterator {
+        var count = 0L
         while (targetKeypad.hasNext()) {
+            count++
             if (level < 5) {
                 println("move on level: $level")
             }
@@ -137,6 +139,7 @@ fun robotKeypadMoves(
             navigator = next.first
             yieldAll(next.second)
         }
+        println("level: $level count: $count")
     }
 }
 
