@@ -165,7 +165,7 @@ fun bisectLargest(range: LongRange, predicate: (Long) -> Boolean): Long {
     return left
 }
 
-fun <T> Set<T>.permutations(): Set<List<T>> {
+fun <T> Collection<T>.permutations(): Set<List<T>> {
     if (this.isEmpty()) return emptySet()
 
     fun <T> _allPermutations(list: List<T>): Set<List<T>> {

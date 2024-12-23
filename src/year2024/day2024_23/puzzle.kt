@@ -1,6 +1,7 @@
 package year2024.day2024_23
 
 import puzzle
+import permutations
 
 val regex = Regex("""(\w+)-(\w+)""")
 
@@ -20,26 +21,23 @@ fun main() {
             regex.matchEntire(it)!!.destructured
                 .let { (a, b) -> Connection(listOf(a, b)) }
         }
-        all.flatMap { it.computers.filter { it.startsWith("t") } }
-            .sumOf { inLanParty(all, it) }
+        val flatMap = all.flatMap { it.computers.filter { it.startsWith("t") } }
+            .flatMap { inLanParty(all, it) }
+            .toSet()
+        flatMap.size
     }
 }
 
-fun inLanParty(all: List<Connection>, start: String): Int {
-    val second = all.filter { it.isConnection(start) }.map { it.other(start) }.toSet()
-    val c3 = all
-        .filter { s -> s.computers.any { it in second }
-                && s.computers.none { it == start } }.flatMap { it.computers }
-
-    val sets = c3.map { c3 ->
-        val c2 = all
-            .filter { it.computers.none { it == start } && it.computers.any { it in second } }
-            .first { it.isConnection(c3) }.other(c3)
-        setOf(
-            start, c3, c2
-        )
-    }
-    return sets.size
+fun inLanParty(all: List<Connection>, start: String): Set<Set<String>> {
+    val second = all.filter { it.isConnection(start) }.flatMap { it.computers }
+    val zip = second.flatMap { a -> second.map { a to it } }
+    val list = zip
+        .filter { (a, b) ->
+            a != b && a != start && b != start && connected(all, a, b)
+        }
+    val distinct = list.map { (a, b) -> setOf(a, b, start) }
+        .toSet()
+    return distinct
 }
 
 fun connected(all: List<Connection>, a: String, b: String): Boolean {
