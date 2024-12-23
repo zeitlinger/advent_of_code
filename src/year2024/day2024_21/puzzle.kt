@@ -56,9 +56,9 @@ data class RobotNavigator(
 
 fun main() {
 //    sequenceLength("1")
-    stringPuzzle("126384") { run ->
+    stringPuzzle("205160") { run ->
         val robotKeypadCache = createNavigator()
-        val iterations = if (run.test) 2 else 25
+        val iterations = if (run.test) 2 else 2
         run.lines.sumOf { code ->
             val length = sequenceLength(code, robotKeypadCache, iterations)
 
