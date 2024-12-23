@@ -2,7 +2,7 @@ package year2024.day2024_21
 
 import Direction
 import Point
-import puzzle
+import stringPuzzle
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
@@ -56,15 +56,16 @@ data class RobotNavigator(
 
 fun main() {
 //    sequenceLength("1")
-    puzzle(126384) { lines ->
+    stringPuzzle("126384") { run ->
         val robotKeypadCache = createNavigator()
-        lines.sumOf { code ->
-            val length = sequenceLength(code, robotKeypadCache)
+        val iterations = if (run.test) 2 else 25
+        run.lines.sumOf { code ->
+            val length = sequenceLength(code, robotKeypadCache, iterations)
 
             val i = code.dropLast(1).toInt()
             println("$length * $i = ${length * i}")
             length * i
-        }
+        }.toString()
     }
 }
 
@@ -97,14 +98,21 @@ private fun createNavigator(): RobotNavigator {
     return list[robotKeypad.pointToIndex(robotKeypad.start())]
 }
 
-fun sequenceLength(code: String, robotKeypadCache: RobotNavigator): Int {
+fun sequenceLength(code: String, robotKeypadCache: RobotNavigator, iterations: Int): Long {
     val recursiveKeypadMoves = recursiveKeypadMoves(code, numericKeypad).minBy { it.length }
     var iterator = movesToIndexes(recursiveKeypadMoves).iterator()
-    (0 until 2).forEach { i ->
+    (0 until iterations).forEach { i ->
         println("iteration: $i")
         iterator = robotKeypadMoves(robotKeypadCache, iterator, i)
     }
-    val count = iterator.asSequence().count()
+    var count = 0L
+    while (iterator.hasNext()) {
+        count++
+        iterator.next()
+        if (count % 100_0000_000L == 0L) {
+            println("count: $count")
+        }
+    }
     println("count: $count")
     return count
 }
@@ -121,6 +129,9 @@ fun robotKeypadMoves(
     var navigator = start
     return iterator {
         while (targetKeypad.hasNext()) {
+            if (level < 5) {
+                println("move on level: $level")
+            }
             val input = targetKeypad.next()
             val next = navigator.next(input)
             navigator = next.first
