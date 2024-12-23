@@ -26,24 +26,20 @@ fun main() {
 }
 
 fun inLanParty(all: List<Connection>, start: String): Int {
-    val second = all.filter { it.isConnection(start) }
-    val list = second.flatMap { it.computers }
-        .filter { it != start }
-        .map { c2 ->
-//            val avoid = setOf(start, it)
-            val c3 = all
-                .filter { c3 ->
-                    c3.isConnection(c2) && c3.computers.any { it == start }
-                }
-            c3.map {
-                val set = mutableSetOf<String>()
-                set.addAll(it.computers)
-                set.add(start)
-                set
-            }
-        }
-    return list
-        .count()
+    val second = all.filter { it.isConnection(start) }.map { it.other(start) }.toSet()
+    val c3 = all
+        .filter { s -> s.computers.any { it in second }
+                && s.computers.none { it == start } }.flatMap { it.computers }
+
+    val sets = c3.map { c3 ->
+        val c2 = all
+            .filter { it.computers.none { it == start } && it.computers.any { it in second } }
+            .first { it.isConnection(c3) }.other(c3)
+        setOf(
+            start, c3, c2
+        )
+    }
+    return sets.size
 }
 
 fun connected(all: List<Connection>, a: String, b: String): Boolean {
