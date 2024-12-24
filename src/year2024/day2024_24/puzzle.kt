@@ -1,6 +1,7 @@
 package year2024.day2024_24
 
 import puzzle
+import stringPuzzle
 
 //tnw OR pbm -> gnj
 val opRegex = Regex("""(\w+) (\w+) (\w+) -> (\w+)""")
@@ -9,8 +10,8 @@ val opRegex = Regex("""(\w+) (\w+) (\w+) -> (\w+)""")
 val valueRegex = Regex("""(\w+): (\d+)""")
 
 fun main() {
-    puzzle(2024) { lines ->
-        val wires = lines.map { instruction ->
+    stringPuzzle(null) { input ->
+        val wires = input.lines.map { instruction ->
             val literal = valueRegex.matchEntire(instruction)
             val op = opRegex.matchEntire(instruction)
             when {
@@ -42,9 +43,22 @@ fun main() {
                 }
             }
         }
+        printTree(wires)
         simulateWires(wires)
         wireOutput(wires)
     }
+}
+
+fun printTree(wires: List<Wire>) {
+    val wireMap = wires.associateBy { it.name }
+    wires.filter { w -> wires.none { w.name in it.needs } }
+        .sortedBy { it.name }
+        .forEach { w -> printTree(w, wireMap, 0) }
+}
+
+fun printTree(wires: Wire, wireMap: Map<String, Wire>, level: Int) {
+    println("${" ".repeat(level)}${wires.name} = ${wires.instruction}")
+    wires.needs.forEach { wireMap[it]?.let { w -> printTree(w, wireMap, level + 1) } }
 }
 
 fun wireOutput(wires: List<Wire>): Long {
