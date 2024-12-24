@@ -56,21 +56,61 @@ fun fixWires(wires: List<Wire>) {
     traceWire(0, wireMap)
 }
 
-fun traceWire(bit: Int, wireMap: Map<String, Wire>) {
+fun traceWire(bit: Int, wireMap: Map<String, Wire>, carryIn: Wire? = null) {
     println("trace bit: $bit")
-    if (bit > 0) {
-        // todo find carry-in
-    }
+
     val num = bit.toString().padStart(2, '0')
-    if (bit < 45) {
-        // todo special case
+    val resultName = "z$num"
+    if (bit == 45) {
+        // todo special case for bit 45
+    } else {
         val x = wireMap["x$num"]!!
         val y = wireMap["y$num"]!!
-        val inOxr = wireMap.values.find { it.op == "XOR" && it.needs.contains(x.name) && it.needs.contains(y.name) }!!
+        val inOxr = find(wireMap, "XOR", x, y, null)
+        val inAnd = find(wireMap, "AND", x, y, null)
+        val result =
+            if (carryIn != null) {
+                find(wireMap, "XOR", inOxr, carryIn, resultName)
+            } else {
+                requireName(inOxr, resultName)
+                inOxr
+            }
+
+        val carryOut: Wire =
+            if (carryIn != null) {
+                val carryAnd = find(wireMap, "AND", carryIn, inOxr, null)
+                val carryOr = find(wireMap, "OR", inAnd, carryAnd, null)
+                carryOr
+            } else {
+                inAnd
+            }
+        traceWire(bit + 1, wireMap, carryOut)
     }
-    if (bit < 45) {
-        traceWire(bit + 1, wireMap)
+}
+
+fun requireName(wire: Wire, resultName: String) {
+    if (wire.name != resultName) {
+        throw IllegalArgumentException("expected $resultName but got ${wire.name}")
     }
+}
+
+private fun find(
+    wireMap: Map<String, Wire>,
+    op: String,
+    x: Wire,
+    y: Wire,
+    needName: String?
+): Wire {
+    val wire = wireMap.values.find {
+        it.op == op && it.needs.contains(x.name) && it.needs.contains(y.name)
+    }
+    if (wire == null) {
+        throw IllegalArgumentException("missing $op for ${x.name} and ${y.name}")
+    }
+    if (needName != null && wire.name != needName) {
+        throw IllegalArgumentException("expected $needName but got ${wire.name}")
+    }
+    return wire
 }
 
 fun printTree(wires: List<Wire>) {
