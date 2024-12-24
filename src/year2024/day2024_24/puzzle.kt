@@ -4,7 +4,7 @@ import PuzzleRun
 import stringPuzzle
 
 data class Wire(
-    val name: String,
+    var name: String,
     val instruction: String,
     val op: String,
     var value: Long?,
@@ -23,6 +23,8 @@ data class Circuit(
     fun swap(n1: String, n2: String) {
         swaps[n1] = n2
         swaps[n2] = n1
+        getWire(n1).name = n2
+        getWire(n2).name = n1
     }
 
     fun getWire(name: String): Wire {
