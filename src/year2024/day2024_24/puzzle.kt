@@ -44,11 +44,13 @@ fun main() {
     stringPuzzle(null) { input ->
         val wires = readInput(input)
         val circuit = Circuit(wires.associateBy { it.name }, mutableMapOf())
+        // manually figured out some swaps: hsw and jmh
+        circuit.swap("hsw", "jmh")
 //        printTree(wires)
         fixWires(circuit)
 //        simulateWires(wires)
 //        wireOutput(wires)
-        "todo"
+        circuit.swaps.keys.toSortedSet().joinToString(",")
     }
 }
 
@@ -93,7 +95,7 @@ fun traceWire(bit: Int, circuit: Circuit, carryIn: Wire? = null) {
     val num = bit.toString().padStart(2, '0')
     val resultName = "z$num"
     if (bit == 45) {
-        // todo special case for bit 45
+        requireName(carryIn!!, resultName)
     } else {
         val x = circuit.getWire("x$num")
         val y = circuit.getWire("y$num")
