@@ -4,7 +4,7 @@ import PuzzleRun
 import stringPuzzle
 
 data class Wire(
-    var name: String,
+    val name: String,
     val instruction: String,
     val op: String,
     var value: Long?,
@@ -23,12 +23,14 @@ data class Circuit(
     fun swap(n1: String, n2: String) {
         swaps[n1] = n2
         swaps[n2] = n1
-        getWire(n1).name = n2
-        getWire(n2).name = n1
     }
 
     fun getWire(name: String): Wire {
         return wires[swaps[name] ?: name]!!
+    }
+
+    fun name(wire: Wire): String {
+        return swaps[wire.name] ?: wire.name
     }
 }
 
@@ -132,7 +134,7 @@ private fun find(
 ): Wire {
     val wireMap = circuit.wires
     val wire = wireMap.values.find {
-        it.op == op && it.needs.contains(x.name) && it.needs.contains(y.name)
+        it.op == op && it.needs.contains(circuit.name(x)) && it.needs.contains(circuit.name(y))
     }
     if (wire == null) {
         throw IllegalArgumentException("missing $op for ${x.name} and ${y.name}")
