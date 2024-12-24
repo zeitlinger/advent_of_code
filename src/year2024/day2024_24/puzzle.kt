@@ -19,7 +19,16 @@ data class Wire(
 data class Circuit(
     val wires: Map<String, Wire>,
     val swaps: MutableMap<String, String>,
-)
+) {
+    fun swap(n1: String, n2: String) {
+        swaps[n1] = n2
+        swaps[n2] = n1
+    }
+
+    fun getWire(name: String): Wire {
+        return wires[swaps[name] ?: name]!!
+    }
+}
 
 //tnw OR pbm -> gnj
 val opRegex = Regex("""(\w+) (\w+) (\w+) -> (\w+)""")
@@ -76,15 +85,14 @@ fun fixWires(circuit: Circuit) {
 
 fun traceWire(bit: Int, circuit: Circuit, carryIn: Wire? = null) {
     println("trace bit: $bit")
-    val wireMap = circuit.wires
 
     val num = bit.toString().padStart(2, '0')
     val resultName = "z$num"
     if (bit == 45) {
         // todo special case for bit 45
     } else {
-        val x = wireMap["x$num"]!!
-        val y = wireMap["y$num"]!!
+        val x = circuit.getWire("x$num")
+        val y = circuit.getWire("y$num")
         val inOxr = find(circuit, "XOR", x, y, null)
         val inAnd = find(circuit, "AND", x, y, null)
         val result =
@@ -128,35 +136,35 @@ private fun find(
         throw IllegalArgumentException("missing $op for ${x.name} and ${y.name}")
     }
     if (needName != null && wire.name != needName) {
-        throw IllegalArgumentException("expected $needName but got ${wire.name}")
+        circuit.swap(needName, wire.name)
     }
     return wire
 }
-
-fun printTree(circuit: Circuit) {
-    val wires = circuit.wires.values
-    val wireMap = wires.associateBy { it.name }
-    wires.filter { w -> wires.none { w.name in it.needs } }
-        .sortedBy { it.name }
-        .forEach { w -> printTree(w, circuit, 0) }
-}
-
-fun printTree(wires: Wire, circuit: Circuit, level: Int) {
-    println("${" ".repeat(level)}${wires.name} = ${wires.instruction}")
-    val wireMap = circuit.wires
-    wires.needs.forEach { wireMap[it]?.let { w -> printTree(w, circuit, level + 1) } }
-}
-
-fun wireOutput(wires: List<Wire>): Long {
-    return wires
-        .filter { it.name.startsWith("z") }
-        .sortedBy { it.name }
-        .map {
-            val order = it.name.substring(1).toInt()
-            it.value!! shl order
-        }
-        .sum()
-}
+//
+//fun printTree(circuit: Circuit) {
+//    val wires = circuit.wires.values
+//    val wireMap = wires.associateBy { it.name }
+//    wires.filter { w -> wires.none { w.name in it.needs } }
+//        .sortedBy { it.name }
+//        .forEach { w -> printTree(w, circuit, 0) }
+//}
+//
+//fun printTree(wires: Wire, circuit: Circuit, level: Int) {
+//    println("${" ".repeat(level)}${wires.name} = ${wires.instruction}")
+//    val wireMap = circuit.wires
+//    wires.needs.forEach { wireMap[it]?.let { w -> printTree(w, circuit, level + 1) } }
+//}
+//
+//fun wireOutput(wires: List<Wire>): Long {
+//    return wires
+//        .filter { it.name.startsWith("z") }
+//        .sortedBy { it.name }
+//        .map {
+//            val order = it.name.substring(1).toInt()
+//            it.value!! shl order
+//        }
+//        .sum()
+//}
 
 fun simulateWires(wireList: List<Wire>) {
     println("### start ###")
