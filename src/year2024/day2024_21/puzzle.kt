@@ -58,7 +58,7 @@ fun main() {
 //    sequenceLength("1")
     stringPuzzle("205160") { run ->
         val robotKeypadCache = createNavigator()
-        val iterations = if (run.test) 2 else 2
+        val iterations = if (run.test) 2 else 25
         run.lines.sumOf { code ->
             val length = sequenceLength(code, robotKeypadCache, iterations)
 
@@ -98,8 +98,36 @@ private fun createNavigator(): RobotNavigator {
     return list[robotKeypad.pointToIndex(robotKeypad.start())]
 }
 
+data class Clue(val code: String, val min: Int, val copies: Int, val use: Int)
+
+val clues = listOf(
+    Clue("839A", 16,4, 1),
+    Clue("169A", 14, 2, 0),
+    Clue("579A", 14, 4, 0),
+    Clue("670A", 14, 2, 0),
+    Clue("638A", 14, 4, 1),
+)
+
+private fun numericMoves(code: String): String {
+    val moves = recursiveKeypadMoves(code, numericKeypad)
+    val l = moves.map { it.length }
+    val clue = clues.single { it.code == code }
+    val min = l.min()!!
+    if (min != clue.min) {
+        throw IllegalArgumentException("Invalid clue for $code: min is ${clue.min} but got $min")
+    }
+    if (moves.any { it.length != min }) {
+        throw IllegalArgumentException("Invalid clue for $code: min is $min but got $moves")
+    }
+    val count = l.size
+    if (count != clue.copies) {
+        throw IllegalArgumentException("Invalid clue for $code: copies is ${clue.copies} but got $count")
+    }
+    return moves[clue.use]
+}
+
 fun sequenceLength(code: String, robotKeypadCache: RobotNavigator, iterations: Int): Long {
-    val recursiveKeypadMoves = recursiveKeypadMoves(code, numericKeypad).minBy { it.length }
+    val recursiveKeypadMoves = numericMoves(code)
     var iterator = movesToIndexes(recursiveKeypadMoves).iterator()
     (0 until iterations).forEach { i ->
         println("iteration: $i")
