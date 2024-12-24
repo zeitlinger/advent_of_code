@@ -3,6 +3,24 @@ package year2024.day2024_24
 import PuzzleRun
 import stringPuzzle
 
+data class Wire(
+    val name: String,
+    val instruction: String,
+    val op: String,
+    var value: Long?,
+    val needs: List<String>,
+    val operation: (List<Long>) -> Long
+) {
+    fun calculate(wires: Map<String, Wire>) {
+        value = operation(needs.map { wires[it]!!.value!! })
+    }
+}
+
+data class Circuit(
+    val wires: Map<String, Wire>,
+    val swaps: MutableMap<String, String>,
+)
+
 //tnw OR pbm -> gnj
 val opRegex = Regex("""(\w+) (\w+) (\w+) -> (\w+)""")
 
@@ -12,8 +30,9 @@ val valueRegex = Regex("""(\w+): (\d+)""")
 fun main() {
     stringPuzzle(null) { input ->
         val wires = readInput(input)
+        val circuit = Circuit(wires.associateBy { it.name }, mutableMapOf())
 //        printTree(wires)
-        fixWires(wires)
+        fixWires(circuit)
 //        simulateWires(wires)
 //        wireOutput(wires)
         "todo"
@@ -51,13 +70,13 @@ private fun readInput(input: PuzzleRun) = input.lines.map { instruction ->
     }
 }
 
-fun fixWires(wires: List<Wire>) {
-    val wireMap = wires.associateBy { it.name }
-    traceWire(0, wireMap)
+fun fixWires(circuit: Circuit) {
+    traceWire(0, circuit)
 }
 
-fun traceWire(bit: Int, wireMap: Map<String, Wire>, carryIn: Wire? = null) {
+fun traceWire(bit: Int, circuit: Circuit, carryIn: Wire? = null) {
     println("trace bit: $bit")
+    val wireMap = circuit.wires
 
     val num = bit.toString().padStart(2, '0')
     val resultName = "z$num"
@@ -66,11 +85,11 @@ fun traceWire(bit: Int, wireMap: Map<String, Wire>, carryIn: Wire? = null) {
     } else {
         val x = wireMap["x$num"]!!
         val y = wireMap["y$num"]!!
-        val inOxr = find(wireMap, "XOR", x, y, null)
-        val inAnd = find(wireMap, "AND", x, y, null)
+        val inOxr = find(circuit, "XOR", x, y, null)
+        val inAnd = find(circuit, "AND", x, y, null)
         val result =
             if (carryIn != null) {
-                find(wireMap, "XOR", inOxr, carryIn, resultName)
+                find(circuit, "XOR", inOxr, carryIn, resultName)
             } else {
                 requireName(inOxr, resultName)
                 inOxr
@@ -78,13 +97,13 @@ fun traceWire(bit: Int, wireMap: Map<String, Wire>, carryIn: Wire? = null) {
 
         val carryOut: Wire =
             if (carryIn != null) {
-                val carryAnd = find(wireMap, "AND", carryIn, inOxr, null)
-                val carryOr = find(wireMap, "OR", inAnd, carryAnd, null)
+                val carryAnd = find(circuit, "AND", carryIn, inOxr, null)
+                val carryOr = find(circuit, "OR", inAnd, carryAnd, null)
                 carryOr
             } else {
                 inAnd
             }
-        traceWire(bit + 1, wireMap, carryOut)
+        traceWire(bit + 1, circuit, carryOut)
     }
 }
 
@@ -95,12 +114,13 @@ fun requireName(wire: Wire, resultName: String) {
 }
 
 private fun find(
-    wireMap: Map<String, Wire>,
+    circuit: Circuit,
     op: String,
     x: Wire,
     y: Wire,
     needName: String?
 ): Wire {
+    val wireMap = circuit.wires
     val wire = wireMap.values.find {
         it.op == op && it.needs.contains(x.name) && it.needs.contains(y.name)
     }
@@ -113,16 +133,18 @@ private fun find(
     return wire
 }
 
-fun printTree(wires: List<Wire>) {
+fun printTree(circuit: Circuit) {
+    val wires = circuit.wires.values
     val wireMap = wires.associateBy { it.name }
     wires.filter { w -> wires.none { w.name in it.needs } }
         .sortedBy { it.name }
-        .forEach { w -> printTree(w, wireMap, 0) }
+        .forEach { w -> printTree(w, circuit, 0) }
 }
 
-fun printTree(wires: Wire, wireMap: Map<String, Wire>, level: Int) {
+fun printTree(wires: Wire, circuit: Circuit, level: Int) {
     println("${" ".repeat(level)}${wires.name} = ${wires.instruction}")
-    wires.needs.forEach { wireMap[it]?.let { w -> printTree(w, wireMap, level + 1) } }
+    val wireMap = circuit.wires
+    wires.needs.forEach { wireMap[it]?.let { w -> printTree(w, circuit, level + 1) } }
 }
 
 fun wireOutput(wires: List<Wire>): Long {
@@ -134,19 +156,6 @@ fun wireOutput(wires: List<Wire>): Long {
             it.value!! shl order
         }
         .sum()
-}
-
-data class Wire(
-    val name: String,
-    val instruction: String,
-    val op: String,
-    var value: Long?,
-    val needs: List<String>,
-    val operation: (List<Long>) -> Long
-) {
-    fun calculate(wires: Map<String, Wire>) {
-        value = operation(needs.map { wires[it]!!.value!! })
-    }
 }
 
 fun simulateWires(wireList: List<Wire>) {
