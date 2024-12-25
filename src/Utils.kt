@@ -22,7 +22,21 @@ fun check(got: String, expected: String) {
     require(got == expected) { "Check failed: got $got, expected $expected" }
 }
 
-data class PuzzleRun(val lines: List<String>, val test: Boolean)
+data class PuzzleRun(val lines: List<String>, val test: Boolean) {
+    fun lineBlocks(): List<List<String>> {
+        val result = mutableListOf<List<String>>()
+        var remaining = lines
+        while (true) {
+            val i = remaining.indexOf("")
+            if (i == -1) {
+                result.add(remaining)
+                return result
+            }
+            result.add(remaining.subList(0, i))
+            remaining = remaining.subList(i + 1, remaining.size)
+        }
+    }
+}
 
 fun <N : Number> puzzle(
     expected: N?,
@@ -35,7 +49,7 @@ fun <N : Number> puzzle(
 
 fun stringPuzzle(
     expected: String?,
-    keepEmptyRows: Boolean = false,
+    keepEmptyRows: Boolean = true,
     runTest: Boolean = true,
     skip: Long = 2,
     part: (PuzzleRun) -> String
@@ -173,8 +187,8 @@ fun <T> Collection<T>.permutations(): Set<List<T>> {
 
         val result: MutableSet<List<T>> = mutableSetOf()
         for (i in list.indices) {
-            _allPermutations(list - list[i]).forEach {
-                item -> result.add(item + list[i])
+            _allPermutations(list - list[i]).forEach { item ->
+                result.add(item + list[i])
             }
         }
         return result

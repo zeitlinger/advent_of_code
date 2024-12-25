@@ -2,6 +2,7 @@ package year2023.day2023_13
 
 import Point
 import puzzle
+import stringPuzzle
 
 enum class Content(val symbol: Char) {
     EMPTY('.'),
@@ -22,8 +23,8 @@ data class Tile(var content: Content, val point: Point) {
 }
 
 fun main() {
-    puzzle(400, keepEmptyRows = true) { lines ->
-        val valleys = lineBlocks(lines).map { block ->
+    stringPuzzle("400") { input ->
+        val valleys = input.lineBlocks().map { block ->
             block.mapIndexed { y, row ->
                 row.mapIndexed { x, c ->
                     Tile(Content.of(c), Point(x, y))
@@ -36,7 +37,7 @@ fun main() {
             val old = findReflection(valley, -1)
 
             valleyValue(valley, old)
-        }
+        }.toString()
     }
 }
 
@@ -119,19 +120,5 @@ fun isVerticalMirror(valley: List<List<Tile>>, above: Int): Boolean {
                 tile.content == valley[mirror][tile.point.x].content
             }
         }
-    }
-}
-
-private fun lineBlocks(lines: List<String>): List<List<String>> {
-    val result = mutableListOf<List<String>>()
-    var remaining = lines
-    while (true) {
-        val i = remaining.indexOf("")
-        if (i == -1) {
-            result.add(remaining)
-            return result
-        }
-        result.add(remaining.subList(0, i))
-        remaining = remaining.subList(i + 1, remaining.size)
     }
 }
