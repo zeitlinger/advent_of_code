@@ -36,34 +36,29 @@ val robotKeypad = Keypad(
     )
 )
 
-data class RobotKeyCache(private val cache: MutableMap<Point, MutableMap<String, Pair<String, Point>>>) {
-    // todo only need length
-    fun get(from: Point, codePart: String): Pair<String, Point>? {
-        return cache[from]?.get(codePart)
+typealias LevelCache = MutableMap<Point, MutableMap<Char, Pair<Long, Point>>>
+
+data class RobotKeyCache(private val cache: List<LevelCache>) {
+    private fun levelCache(level: Int): LevelCache {
+        return cache[level]
     }
 
-    fun put(from: Point, to: Point, input: String, output: String) {
-        cache.getOrPut(from) { mutableMapOf() }[input] = output to to
+    fun get(from: Point, code: Char, levelsRemaining: Int): Pair<Long, Point>? =
+        levelCache(levelsRemaining)[from]?.get(code)
+
+    fun put(from: Point, to: Point, input: Char, output: Long, levelsRemaining: Int) {
+        levelCache(levelsRemaining).getOrPut(from) { mutableMapOf() }[input] = output to to
     }
 }
 
 fun main() {
-//    sequenceLength("1")
     puzzle(126384) { lines ->
+        val levels = 2
         lines.sumOf { code ->
-            val robotKeypadCache = RobotKeyCache(mutableMapOf())
-            // warm up cache
-            robotKeypad.locations.entries.forEach { e ->
-                robotKeypad.locations.values.forEach { from ->
-                    val key = e.key
-                    val to = e.value
-                    val toKey = moves(from, to, robotKeypad).first()
-                    robotKeypadCache.put(from, to, key.toString(), toKey)
-                }
-            }
+            val robotKeypadCache = RobotKeyCache(List(levels) { mutableMapOf() })
 
             val moves = recursiveKeypadMoves(code, numericKeypad)
-            val all = moves.map { robotKeypadMoves(it, robotKeypadCache, 2) }
+            val all = moves.map { robotKeypadMoves(it, robotKeypadCache, levels - 1) }
             val length = all.min()
             val i = code.dropLast(1).toInt()
             println("$length * $i = ${length * i}")
@@ -80,10 +75,29 @@ fun robotKeypadMoves(
     var location = robotKeypad.start()
     var length = 0L
     code.forEach { c ->
-        val p = cache.get(location, c.toString()) ?: throw IllegalArgumentException("Invalid code")
-        location = p.second
-        length += robotKeypadMoves(p.first, cache, levelsRemaining - 1)
+        val p = cache.get(location, c, levelsRemaining)
+        if (p != null) {
+            length += p.first
+            location = p.second
+        } else {
+            val to = robotKeypad.locations[c] ?: throw IllegalArgumentException("Invalid code $c")
+            val moves = moves(location, to, robotKeypad).first() // trying all makes no difference (?)
+            val l = if (levelsRemaining == 0) moves.length.toLong() else robotKeypadMoves(moves, cache, levelsRemaining - 1)
+            cache.put(location, to, c, l, levelsRemaining)
+            location = to
+            length += l
+        }
     }
+//
+//    robotKeypad.locations.entries.forEach { e ->
+//                   robotKeypad.locations.values.forEach { from ->
+//                       val key = e.key
+//                       val to = e.value
+//                       val toKey = moves(from, to, robotKeypad).first()
+//                       robotKeypadCache.put(from, to, key.toString(), toKey)
+//                   }
+//               }
+
     return length
 }
 
