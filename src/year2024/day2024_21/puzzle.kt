@@ -2,7 +2,6 @@ package year2024.day2024_21
 
 import Direction
 import Point
-import bisectLargest
 import puzzle
 
 data class Keypad(val locations: Map<Char, Point>) {
@@ -63,51 +62,29 @@ fun main() {
                 }
             }
 
-            val s = sequenceLength(code, robotKeypadCache)
-            val length = s.length
+            val moves = recursiveKeypadMoves(code, numericKeypad)
+            val all = moves.map { robotKeypadMoves(it, robotKeypadCache, 2) }
+            val length = all.min()
             val i = code.dropLast(1).toInt()
-            println("$code: $s")
             println("$length * $i = ${length * i}")
             length * i
         }
     }
 }
 
-fun sequenceLength(code: String, robotKeypadCache: RobotKeyCache): String {
-    var current = recursiveKeypadMoves(code, numericKeypad)
-    (0 until 25).forEach { i ->
-        println("iteration: $i")
-        println("current: ${current.map { it.length }}")
-        current = current.flatMap { robotKeypadMoves(it, robotKeypadCache) }
-    }
-//    println("depressurized: $depressurized: ${depressurized}")
-//    println("radiation: $radiation: ${radiation}")
-//    println("cold: $cold: ${cold}")
-//    println("minBy: ${cold.minOf { it.length }}")
-//    throw IllegalArgumentException("done")
-    return current.minBy { it.length }
-}
-
 fun robotKeypadMoves(
     code: String,
     cache: RobotKeyCache,
-): List<String> {
-    var result = ""
-    var i = 0L
-    val start = robotKeypad.start()
-    var location = start
-    while (i < code.length) {
-        val j = bisectLargest(i + 1..code.length) {
-            cache.get(location, code.substring(i.toInt(), it.toInt())) != null
-        }.toInt()
-        val p = cache.get(location, code.substring(i.toInt(), j)) ?: throw IllegalArgumentException("Invalid code")
-        result += p.first
+    levelsRemaining: Int,
+): Long {
+    var location = robotKeypad.start()
+    var length = 0L
+    code.forEach { c ->
+        val p = cache.get(location, c.toString()) ?: throw IllegalArgumentException("Invalid code")
         location = p.second
-        cache.put(start, location, code.substring(0, j), result)
-        i = j.toLong()
+        length += robotKeypadMoves(p.first, cache, levelsRemaining - 1)
     }
-    // crop return to A
-    return listOf(result)
+    return length
 }
 
 fun recursiveKeypadMoves(code: String, keypad: Keypad, start: Point = keypad.start()): List<String> {
