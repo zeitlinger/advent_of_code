@@ -2,7 +2,7 @@ package year2024.day2024_21
 
 import Direction
 import Point
-import puzzle
+import stringPuzzle
 
 data class Keypad(val locations: Map<Char, Point>) {
     fun start(): Point {
@@ -52,9 +52,9 @@ data class RobotKeyCache(private val cache: List<LevelCache>) {
 }
 
 fun main() {
-    puzzle(126384) { lines ->
-        val levels = 2
-        lines.sumOf { code ->
+    stringPuzzle("126384") { input ->
+        val levels = if (input.test) 2 else 25
+        input.lines.sumOf { code ->
             val robotKeypadCache = RobotKeyCache(List(levels) { mutableMapOf() })
 
             val moves = recursiveKeypadMoves(code, numericKeypad)
@@ -63,7 +63,7 @@ fun main() {
             val i = code.dropLast(1).toInt()
             println("$length * $i = ${length * i}")
             length * i
-        }
+        }.toString()
     }
 }
 
@@ -81,23 +81,23 @@ fun robotKeypadMoves(
             location = p.second
         } else {
             val to = robotKeypad.locations[c] ?: throw IllegalArgumentException("Invalid code $c")
-            val moves = moves(location, to, robotKeypad).first() // trying all makes no difference (?)
-            val l = if (levelsRemaining == 0) moves.length.toLong() else robotKeypadMoves(moves, cache, levelsRemaining - 1)
+            val moves = moves(location, to, robotKeypad)
+            val l = moves.minOf { move ->
+                if (levelsRemaining == 0) {
+                    move.length.toLong()
+                } else {
+                    robotKeypadMoves(
+                        move,
+                        cache,
+                        levelsRemaining - 1
+                    )
+                }
+            }
             cache.put(location, to, c, l, levelsRemaining)
             location = to
             length += l
         }
     }
-//
-//    robotKeypad.locations.entries.forEach { e ->
-//                   robotKeypad.locations.values.forEach { from ->
-//                       val key = e.key
-//                       val to = e.value
-//                       val toKey = moves(from, to, robotKeypad).first()
-//                       robotKeypadCache.put(from, to, key.toString(), toKey)
-//                   }
-//               }
-
     return length
 }
 
